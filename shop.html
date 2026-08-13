@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Paw Alert</title>
+<meta name="description" content="Paw Alert merch - support the app that helps lost pets find home.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF9F6; --card:#ffffff; --ink:#22201C; --ink-soft:#6B6559;
+    --line:#E7E2D8; --brand:#D64B3B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.5}
+  .serif{font-family:'Fraunces',serif}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:26px 28px;max-width:1160px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand-mark{width:36px;height:36px;background:var(--brand);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .brand-name{font-family:'Fraunces',serif;font-weight:700;font-size:20px}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{color:var(--ink-soft);text-decoration:none;font-weight:600;font-size:15px}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{background:var(--ink);color:#fff;padding:11px 22px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none}
+
+  .shop-hero{padding:50px 28px 60px;max-width:1160px;margin:0 auto}
+  .shop-hero .eyebrow{display:inline-block;background:#FBEAE6;color:var(--brand);font-weight:700;font-size:13px;padding:7px 16px;border-radius:999px;margin-bottom:20px}
+  .shop-hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.6vw,50px);line-height:1.05;margin-bottom:16px;max-width:640px}
+  .shop-hero p{color:var(--ink-soft);font-size:17px;max-width:480px}
+
+  .products{padding:20px 28px 100px;max-width:1160px;margin:0 auto}
+  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  @media(max-width:860px){.product-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.product-grid{grid-template-columns:1fr}}
+
+  .product-card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .product-card .img{aspect-ratio:1/1;background:linear-gradient(135deg,#F4D9BC,#E7A465);display:flex;align-items:center;justify-content:center;font-size:64px}
+  .product-card:nth-child(2) .img{background:linear-gradient(135deg,#D9E8DC,#8FBF9A)}
+  .product-card:nth-child(3) .img{background:linear-gradient(135deg,#E4D9F0,#B49AD9)}
+  .product-card .body{padding:20px 22px 24px}
+  .product-card h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:6px}
+  .product-card .price{font-weight:700;font-size:16px;color:var(--ink);margin-bottom:14px}
+  .product-card p{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px}
+  .buy-btn{
+    display:block;width:100%;text-align:center;background:var(--ink);color:#fff;
+    padding:13px;border-radius:10px;font-weight:700;font-size:14.5px;text-decoration:none;
+  }
+  .buy-btn:hover{background:#000}
+
+  .why{background:#22201C;color:#C9C4B8;padding:60px 28px;text-align:center}
+  .why h2{font-family:'Fraunces',serif;color:#fff;font-size:clamp(24px,3.2vw,32px);margin-bottom:14px}
+  .why p{max-width:520px;margin:0 auto;font-size:15.5px}
+
+  footer{padding:40px 28px;text-align:center;color:var(--ink-soft);font-size:13px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">
+    <span class="brand-mark">🐾</span>
+    <span class="brand-name">Paw Alert</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html#stories">Stories</a>
+    <a href="shop.html">Shop</a>
+    <a href="contact.html">Contact</a>
+    <a href="https://play.google.com/store/apps/details?id=com.yourname.pawmatch" class="nav-cta" target="_blank" rel="noopener noreferrer">Get the app</a>
+  </div>
+</nav>
+
+<header class="shop-hero">
+  <span class="eyebrow">100% goes toward keeping Paw Alert free</span>
+  <h1>Wear the paw. Help pets find home.</h1>
+  <p>Paw Alert has no ads and never will. Merch sales help cover the real costs of running it — servers, maps, notifications, all of it.</p>
+</header>
+
+<section class="products">
+  <div class="product-grid">
+
+    <div class="product-card">
+      <div class="img">👕</div>
+      <div class="body">
+        <h3>Paw Alert Tee</h3>
+        <div class="price">$24</div>
+        <p>Soft cotton, small paw logo on the chest. Unisex sizing, S–XXL.</p>
+        <!-- Replace this href with your real Stripe Payment Link once created -->
+        <a href="#" class="buy-btn">Buy now</a>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="img">👜</div>
+      <div class="body">
+        <h3>Paw Alert Tote Bag</h3>
+        <div class="price">$18</div>
+        <p>Sturdy canvas tote, big enough for treats, leashes, and everything else.</p>
+        <a href="#" class="buy-btn">Buy now</a>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="img">🏷️</div>
+      <div class="body">
+        <h3>Sticker Pack</h3>
+        <div class="price">$6</div>
+        <p>Weatherproof sticker set - paw logo, status-color pins, and more.</p>
+        <a href="#" class="buy-btn">Buy now</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="why">
+  <h2>Why merch, not ads</h2>
+  <p>We'd rather ask the people who love Paw Alert to support it directly than sell your attention to advertisers. Every order helps keep it that way.</p>
+</section>
+
+<footer>© 2026 Paw Alert. All rights reserved.</footer>
+
+</body>
+</html>
