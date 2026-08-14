@@ -14,7 +14,11 @@
   .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
   .brand-mark{width:36px;height:36px;background:var(--brand);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px}
   .brand-name{font-family:'Fraunces',serif;font-weight:700;font-size:20px}
-  .back{color:var(--ink-soft);text-decoration:none;font-weight:600;font-size:14.5px}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{color:var(--ink-soft);text-decoration:none;font-weight:600;font-size:15px}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{background:var(--ink);color:#fff;padding:11px 22px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none}
+  @media(max-width:760px){.nav-links a:not(.nav-cta){display:none}}
 
   main{max-width:720px;margin:0 auto;padding:20px 28px 100px}
   h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,4vw,42px);margin-bottom:8px}
@@ -36,7 +40,13 @@
     <span class="brand-mark">🐾</span>
     <span class="brand-name">Paw Alert</span>
   </a>
-  <a href="index.html" class="back">← Back home</a>
+  <div class="nav-links">
+    <a href="index.html#stories">Stories</a>
+    <a href="index.html#map">Map</a>
+    <a href="shop.html">Shop</a>
+    <a href="contact.html">Contact</a>
+    <a href="https://play.google.com/store/apps/details?id=com.yourname.pawmatch" class="nav-cta" target="_blank" rel="noopener noreferrer">Get the app</a>
+  </div>
 </nav>
 
 <main>
