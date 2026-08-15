@@ -639,13 +639,16 @@
             }
           </div>
           <div class="message-panel" id="msg-panel-${u.id}">
-            <label style="font-size:12.5px;margin-bottom:6px">Send as:</label>
+            <label style="font-size:12.5px;margin-bottom:6px">Conversation:</label>
             <select id="msg-type-${u.id}" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:10px;font-family:'Inter',sans-serif">
               <option value="support">💬 Paw Alert Support</option>
               <option value="team">🐾 Paw Alert Team</option>
               <option value="news">📰 Paw Alert News</option>
             </select>
-            <textarea id="msg-text-${u.id}" placeholder="Type your message..."></textarea>
+            <div class="convo-transcript" id="msg-history-${u.id}" style="margin-bottom:10px">
+              <div style="color:var(--ink-soft);font-size:13px;font-style:italic">Loading conversation...</div>
+            </div>
+            <textarea id="msg-text-${u.id}" placeholder="Type your reply..."></textarea>
             <button class="action-btn resolve small" data-action="send-message" data-id="${u.id}">Send</button>
           </div>
         </div>`;
@@ -653,7 +656,19 @@
 
     container.querySelectorAll("[data-action='toggle-message']").forEach(btn => {
       btn.addEventListener("click", () => {
-        document.getElementById(`msg-panel-${btn.dataset.id}`).classList.toggle("show");
+        const panel = document.getElementById(`msg-panel-${btn.dataset.id}`);
+        panel.classList.toggle("show");
+        if (panel.classList.contains("show")) {
+          loadConversationHistory(btn.dataset.id);
+        } else {
+          stopConversationListener(btn.dataset.id);
+        }
+      });
+    });
+    container.querySelectorAll("[id^='msg-type-']").forEach(select => {
+      select.addEventListener("change", (e) => {
+        const userId = e.target.id.replace("msg-type-", "");
+        loadConversationHistory(userId);
       });
     });
     container.querySelectorAll("[data-action='send-message']").forEach(btn => {
@@ -681,19 +696,70 @@
     });
   }
 
+  const activeConvoListeners = {};
+
+  const CHAT_TYPE_CONFIG = {
+    support: { prefix: "admin_support_", name: "💬 Paw Alert Support" },
+    team: { prefix: "admin_team_", name: "🐾 Paw Alert Team" },
+    news: { prefix: "admin_news_", name: "📰 Paw Alert News" }
+  };
+
+  function loadConversationHistory(userId) {
+    stopConversationListener(userId);
+
+    const typeSelect = document.getElementById(`msg-type-${userId}`);
+    const historyBox = document.getElementById(`msg-history-${userId}`);
+    const chosen = CHAT_TYPE_CONFIG[typeSelect.value] || CHAT_TYPE_CONFIG.support;
+    const chatId = `${chosen.prefix}${userId}`;
+
+    historyBox.innerHTML = `<div style="color:var(--ink-soft);font-size:13px;font-style:italic">Loading conversation...</div>`;
+
+    const messagesQuery = query(
+      collection(db, "chats", chatId, "messages"),
+      orderBy("timestamp", "asc"),
+      limit(50)
+    );
+
+    activeConvoListeners[userId] = onSnapshot(messagesQuery,
+      (snapshot) => {
+        if (snapshot.empty) {
+          historyBox.innerHTML = `<div style="color:var(--ink-soft);font-size:13px;font-style:italic">No messages yet in this conversation.</div>`;
+          return;
+        }
+        historyBox.innerHTML = snapshot.docs.map(d => {
+          const msg = d.data();
+          const isFromAdmin = msg.senderId === "admin";
+          const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleString() : "";
+          return `
+            <div class="convo-line" style="${isFromAdmin ? 'background:#FBEAE6' : ''}">
+              <span class="convo-sender">${isFromAdmin ? 'You (Admin)' : 'Them'}</span>
+              <span class="convo-text">${escapeHtml(msg.text || "")}</span>
+              <span class="convo-time">${time}</span>
+            </div>`;
+        }).join("");
+        historyBox.scrollTop = historyBox.scrollHeight;
+      },
+      (error) => {
+        console.error("Conversation load failed:", error);
+        historyBox.innerHTML = `<div style="color:var(--brand);font-size:13px">Couldn't load this conversation yet - it may not exist until the first message is sent.</div>`;
+      }
+    );
+  }
+
+  function stopConversationListener(userId) {
+    if (activeConvoListeners[userId]) {
+      activeConvoListeners[userId]();
+      delete activeConvoListeners[userId];
+    }
+  }
+
   async function sendDirectMessage(userId) {
     const textArea = document.getElementById(`msg-text-${userId}`);
     const typeSelect = document.getElementById(`msg-type-${userId}`);
     const text = textArea.value.trim();
     if (!text) return;
 
-    const typeConfig = {
-      support: { prefix: "admin_support_", name: "💬 Paw Alert Support" },
-      team: { prefix: "admin_team_", name: "🐾 Paw Alert Team" },
-      news: { prefix: "admin_news_", name: "📰 Paw Alert News" }
-    };
-    const chosen = typeConfig[typeSelect.value] || typeConfig.support;
-
+    const chosen = CHAT_TYPE_CONFIG[typeSelect.value] || CHAT_TYPE_CONFIG.support;
     const chatId = `${chosen.prefix}${userId}`;
     const chatRef = doc(db, "chats", chatId);
     const chatSnap = await getDoc(chatRef);
@@ -714,8 +780,6 @@
       text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
     });
     textArea.value = "";
-    document.getElementById(`msg-panel-${userId}`).classList.remove("show");
-    alert(`Message sent via ${chosen.name}.`);
   }
 
   document.getElementById("userSearch").addEventListener("input", (e) => {
@@ -791,45 +855,55 @@
       confirmLabel: "Yes, send to everyone",
       onConfirm: async () => {
         let sent = 0;
+        const failed = [];
         for (const u of freshUserList) {
-          const teamChatId = `admin_team_${u.id}`;
-          const teamRef = doc(db, "chats", teamChatId);
-          const teamSnap = await getDoc(teamRef);
-          if (!teamSnap.exists()) {
-            await setDoc(teamRef, {
-              participants: ["admin", u.id],
-              animalName: "🐾 Paw Alert Team",
-              animalImageUrl: "",
-              lastMessage: "Welcome to Paw Alert! 👋",
-              lastMessageTime: Timestamp.now(),
-              lastMessageSender: "admin",
-              createdAt: Timestamp.now()
-            });
-            await addDoc(collection(db, "chats", teamChatId, "messages"), {
-              text: teamMessage, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
-            });
-            sent++;
-          }
+          try {
+            const teamChatId = `admin_team_${u.id}`;
+            const teamRef = doc(db, "chats", teamChatId);
+            const teamSnap = await getDoc(teamRef);
+            if (!teamSnap.exists()) {
+              await setDoc(teamRef, {
+                participants: ["admin", u.id],
+                animalName: "🐾 Paw Alert Team",
+                animalImageUrl: "",
+                lastMessage: "Welcome to Paw Alert! 👋",
+                lastMessageTime: Timestamp.now(),
+                lastMessageSender: "admin",
+                createdAt: Timestamp.now()
+              });
+              await addDoc(collection(db, "chats", teamChatId, "messages"), {
+                text: teamMessage, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+              });
+              sent++;
+            }
 
-          const supportChatId = `admin_support_${u.id}`;
-          const supportRef = doc(db, "chats", supportChatId);
-          const supportSnap = await getDoc(supportRef);
-          if (!supportSnap.exists()) {
-            await setDoc(supportRef, {
-              participants: ["admin", u.id],
-              animalName: "💬 Paw Alert Support",
-              animalImageUrl: "",
-              lastMessage: "How can we help you? 👋",
-              lastMessageTime: Timestamp.now(),
-              lastMessageSender: "admin",
-              createdAt: Timestamp.now()
-            });
-            await addDoc(collection(db, "chats", supportChatId, "messages"), {
-              text: supportMessage, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
-            });
+            const supportChatId = `admin_support_${u.id}`;
+            const supportRef = doc(db, "chats", supportChatId);
+            const supportSnap = await getDoc(supportRef);
+            if (!supportSnap.exists()) {
+              await setDoc(supportRef, {
+                participants: ["admin", u.id],
+                animalName: "💬 Paw Alert Support",
+                animalImageUrl: "",
+                lastMessage: "How can we help you? 👋",
+                lastMessageTime: Timestamp.now(),
+                lastMessageSender: "admin",
+                createdAt: Timestamp.now()
+              });
+              await addDoc(collection(db, "chats", supportChatId, "messages"), {
+                text: supportMessage, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+              });
+            }
+          } catch (err) {
+            console.error(`Failed for ${u.email || u.id}:`, err);
+            failed.push(u.email || u.id);
           }
         }
-        alert(`Done. Sent welcome chats to ${sent} users who didn't already have them.`);
+        if (failed.length > 0) {
+          alert(`Done. Sent to ${sent} users.\n\nFailed for: ${failed.join(", ")}\n\nCheck the browser console for the specific error on each - this tells us exactly what's different about those accounts.`);
+        } else {
+          alert(`Done. Sent welcome chats to ${sent} users who didn't already have them.`);
+        }
       }
     });
   });
@@ -879,24 +953,36 @@
       body: text,
       confirmLabel: "Yes, send to everyone",
       onConfirm: async () => {
+        let succeeded = 0;
+        const failed = [];
         for (const u of freshUserList) {
-          const chatId = `admin_news_${u.id}`;
-          const chatRef = doc(db, "chats", chatId);
-          await setDoc(chatRef, {
-            participants: ["admin", u.id],
-            animalName: "📰 Paw Alert News",
-            animalImageUrl: "",
-            lastMessage: text,
-            lastMessageTime: Timestamp.now(),
-            lastMessageSender: "admin",
-            createdAt: Timestamp.now()
-          }, { merge: true });
-          await addDoc(collection(db, "chats", chatId, "messages"), {
-            text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
-          });
+          try {
+            const chatId = `admin_news_${u.id}`;
+            const chatRef = doc(db, "chats", chatId);
+            await setDoc(chatRef, {
+              participants: ["admin", u.id],
+              animalName: "📰 Paw Alert News",
+              animalImageUrl: "",
+              lastMessage: text,
+              lastMessageTime: Timestamp.now(),
+              lastMessageSender: "admin",
+              createdAt: Timestamp.now()
+            }, { merge: true });
+            await addDoc(collection(db, "chats", chatId, "messages"), {
+              text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+            });
+            succeeded++;
+          } catch (err) {
+            console.error(`Failed to send to ${u.email || u.id}:`, err);
+            failed.push(u.email || u.id);
+          }
         }
         document.getElementById("broadcastText").value = "";
-        alert(`Broadcast sent to ${freshUserList.length} users.`);
+        if (failed.length > 0) {
+          alert(`Sent to ${succeeded} of ${freshUserList.length} users.\n\nFailed for: ${failed.join(", ")}\n\nCheck the browser console for the specific error on each.`);
+        } else {
+          alert(`Broadcast sent successfully to all ${succeeded} users.`);
+        }
       }
     });
   });
