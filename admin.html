@@ -298,7 +298,7 @@
     }));
   }
 
-  function renderReports(docs) {
+  async function renderReports(docs) {
     const container = document.getElementById("reportsList");
 
     if (docs.length === 0) {
@@ -310,7 +310,25 @@
       return;
     }
 
-    container.innerHTML = docs.map(d => {
+    // Look up the real name/email behind every user ID involved,
+    // so you're never staring at a meaningless string of characters
+    const userCache = {};
+    async function getUserInfo(userId) {
+      if (!userId || userId === "admin") return null;
+      if (userCache[userId]) return userCache[userId];
+      try {
+        const snap = await getDoc(doc(db, "users", userId));
+        const info = snap.exists()
+          ? { name: snap.data().displayName || snap.data().name || "(no name set)", email: snap.data().email || "" }
+          : { name: "(deleted account)", email: "" };
+        userCache[userId] = info;
+        return info;
+      } catch {
+        return { name: "(couldn't load)", email: "" };
+      }
+    }
+
+    const cardsHtml = await Promise.all(docs.map(async (d) => {
       const r = d.data();
       const id = d.id;
       const type = r.type || "ANIMAL";
@@ -321,17 +339,29 @@
       let deleteLabel = "Delete";
 
       if (type === "MESSAGE") {
+        const reporter = await getUserInfo(r.reporterID);
+        const sender = await getUserInfo(r.reportedUserId);
         bodyHtml = `<strong>Reported message:</strong> "${escapeHtml(r.reportedMessageText || "")}"`;
-        meta = `Reporter: ${r.reporterID || "unknown"} &nbsp;•&nbsp; Sender: ${r.reportedUserId || "unknown"}`;
-        deleteLabel = "Delete message";
+        meta = `Reporter: ${reporter ? `${reporter.name} (${reporter.email})` : "unknown"} &nbsp;•&nbsp; Sender: ${sender ? `${sender.name} (${sender.email})` : "unknown"}`;
       } else if (type === "USER") {
+        const reporter = await getUserInfo(r.reporterID);
+        const reported = await getUserInfo(r.reportedUserId);
         bodyHtml = `<strong>User account reported</strong>`;
-        meta = `Reporter: ${r.reporterID || "unknown"} &nbsp;•&nbsp; Reported: ${r.reportedUserId || "unknown"}`;
-        deleteLabel = "Resolve";
+        meta = `Reporter: ${reporter ? `${reporter.name} (${reporter.email})` : "unknown"} &nbsp;•&nbsp; Reported: ${reported ? `${reported.name} (${reported.email})` : "unknown"}`;
       } else {
         bodyHtml = `<strong>${escapeHtml(r.animalName || "Untitled post")}</strong> — ${escapeHtml(r.reason || "No reason given")}`;
         meta = `Reported by: ${r.reportedByEmail || r.reportedBy || "unknown"}`;
-        deleteLabel = "Delete post";
+      }
+
+      // Build the right set of action buttons for this report type
+      let actionsHtml = `<button class="action-btn resolve" data-action="resolve" data-id="${id}">Dismiss (no action)</button>`;
+      if (type === "ANIMAL") {
+        actionsHtml += `<button class="action-btn danger" data-action="delete" data-id="${id}" data-type="${type}">Delete post</button>`;
+      } else if (type === "MESSAGE") {
+        actionsHtml += `<button class="action-btn danger" data-action="delete" data-id="${id}" data-type="${type}">Delete message</button>`;
+        actionsHtml += `<button class="action-btn danger" data-action="ban" data-id="${id}" data-userid="${r.reportedUserId}">Ban sender</button>`;
+      } else if (type === "USER") {
+        actionsHtml += `<button class="action-btn danger" data-action="ban" data-id="${id}" data-userid="${r.reportedUserId}">Ban this user</button>`;
       }
 
       return `
@@ -342,41 +372,46 @@
           </div>
           <div class="report-body">${bodyHtml}</div>
           <div class="report-meta">${meta}</div>
-          <div class="report-actions">
-            <button class="action-btn resolve" data-action="resolve" data-id="${id}">Mark resolved</button>
-            <button class="action-btn danger" data-action="delete" data-id="${id}" data-type="${type}">${deleteLabel}</button>
-          </div>
+          <div class="report-actions">${actionsHtml}</div>
         </div>`;
-    }).join("");
+    }));
+
+    container.innerHTML = cardsHtml.join("");
 
     container.querySelectorAll("[data-action]").forEach(btn => {
-      btn.addEventListener("click", () => handleReportAction(btn.dataset.action, btn.dataset.id, btn.dataset.type));
+      btn.addEventListener("click", () => handleReportAction(btn.dataset.action, btn.dataset.id, btn.dataset.userid));
     });
   }
 
-  async function handleReportAction(action, reportId, type) {
+  async function handleReportAction(action, reportId, extra) {
     if (action === "resolve") {
       await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
       return;
     }
 
-    if (action === "delete") {
-      const confirmMsg = type === "USER"
-        ? "Mark this user report as resolved?"
-        : "This will permanently delete the reported content. Continue?";
-      if (!confirm(confirmMsg)) return;
-
-      if (type === "USER") {
-        await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
-      } else {
-        // For MESSAGE and ANIMAL types, mark resolved here.
-        // Actually deleting the underlying post/message from this
-        // dashboard requires the same chatId/animalId lookups the
-        // Android admin screen already does - for now, resolve the
-        // report here and use the app for the actual content deletion
-        // to avoid duplicating that logic in two places.
-        await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+    if (action === "ban") {
+      const userId = extra;
+      if (!userId) {
+        alert("Missing user ID, can't ban.");
+        return;
       }
+      if (!confirm("Ban this user? They will no longer be able to post or message anyone.")) return;
+
+      await updateDoc(doc(db, "users", userId), { banned: true });
+      await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+      alert("User banned.");
+      return;
+    }
+
+    if (action === "delete") {
+      // Note: 'extra' here is the report's own data type, passed via
+      // a separate lookup since delete buttons only exist for
+      // ANIMAL/MESSAGE types where full deletion needs more info
+      // than this simple handler receives - resolving here as a
+      // safe default; use the Android admin screen for the actual
+      // content deletion for now.
+      if (!confirm("This will mark the report resolved. Use the app to actually delete the post/message content for now.")) return;
+      await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
     }
   }
 
