@@ -792,12 +792,18 @@
     const text = document.getElementById("broadcastText").value.trim();
     if (!text) return;
 
+    // Fetch a fresh, complete list right now - not the background
+    // cached list, which might not have finished loading everyone
+    // yet if this is clicked soon after the page opens
+    const usersSnap = await getDocs(collection(db, "users"));
+    const freshUserList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
     showConfirmModal({
-      icon: "📢", title: `Send this to all ${allUsersCache.length} users?`,
+      icon: "📢", title: `Send this to all ${freshUserList.length} users?`,
       body: text,
       confirmLabel: "Yes, send to everyone",
       onConfirm: async () => {
-        for (const u of allUsersCache) {
+        for (const u of freshUserList) {
           const chatId = `admin_news_${u.id}`;
           const chatRef = doc(db, "chats", chatId);
           await setDoc(chatRef, {
@@ -814,7 +820,7 @@
           });
         }
         document.getElementById("broadcastText").value = "";
-        alert("Broadcast sent.");
+        alert(`Broadcast sent to ${freshUserList.length} users.`);
       }
     });
   });
