@@ -87,6 +87,20 @@
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--ink-soft)}
   .empty-state .icon{font-size:36px;margin-bottom:10px}
+
+  .evidence-box{background:#FAF9F6;border:1px dashed var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+  .evidence-box.missing{color:var(--ink-soft);font-size:13.5px;font-style:italic}
+  .evidence-label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:10px}
+  .evidence-post{display:flex;gap:14px}
+  .evidence-photo{width:72px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0}
+  .evidence-photo.placeholder{background:#E7E2D8;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-soft)}
+
+  .convo-transcript{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+  .convo-line{font-size:13.5px;padding:8px 10px;border-radius:8px;background:#fff;border:1px solid var(--line)}
+  .convo-line.flagged{background:#FBEAE6;border-color:#F0B4A8}
+  .convo-sender{font-weight:700;margin-right:6px}
+  .convo-time{color:var(--ink-soft);font-size:11.5px;margin-left:8px}
+  .convo-flag{display:block;color:var(--brand);font-weight:700;font-size:11px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -164,7 +178,7 @@
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, collection, query, where, onSnapshot,
-    doc, getDoc, updateDoc, deleteDoc, orderBy
+    doc, getDoc, getDocs, updateDoc, deleteDoc, orderBy, limit
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -336,21 +350,23 @@
 
       let bodyHtml = "";
       let meta = "";
-      let deleteLabel = "Delete";
+      let evidenceHtml = "";
 
       if (type === "MESSAGE") {
         const reporter = await getUserInfo(r.reporterID);
         const sender = await getUserInfo(r.reportedUserId);
         bodyHtml = `<strong>Reported message:</strong> "${escapeHtml(r.reportedMessageText || "")}"`;
         meta = `Reporter: ${reporter ? `${reporter.name} (${reporter.email})` : "unknown"} &nbsp;•&nbsp; Sender: ${sender ? `${sender.name} (${sender.email})` : "unknown"}`;
+        evidenceHtml = await buildConversationContext(r.chatId, r.reportedMessageId);
       } else if (type === "USER") {
         const reporter = await getUserInfo(r.reporterID);
         const reported = await getUserInfo(r.reportedUserId);
         bodyHtml = `<strong>User account reported</strong>`;
         meta = `Reporter: ${reporter ? `${reporter.name} (${reporter.email})` : "unknown"} &nbsp;•&nbsp; Reported: ${reported ? `${reported.name} (${reported.email})` : "unknown"}`;
       } else {
-        bodyHtml = `<strong>${escapeHtml(r.animalName || "Untitled post")}</strong> — ${escapeHtml(r.reason || "No reason given")}`;
+        bodyHtml = `<strong>${escapeHtml(r.animalName || "Untitled post")}</strong> — <em>Reason given: "${escapeHtml(r.reason || "No reason given")}"</em>`;
         meta = `Reported by: ${r.reportedByEmail || r.reportedBy || "unknown"}`;
+        evidenceHtml = await buildAnimalEvidence(r.animalId);
       }
 
       // Build the right set of action buttons for this report type
@@ -372,6 +388,7 @@
           </div>
           <div class="report-body">${bodyHtml}</div>
           <div class="report-meta">${meta}</div>
+          ${evidenceHtml}
           <div class="report-actions">${actionsHtml}</div>
         </div>`;
     }));
@@ -412,6 +429,73 @@
       // content deletion for now.
       if (!confirm("This will mark the report resolved. Use the app to actually delete the post/message content for now.")) return;
       await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+    }
+  }
+
+  // ---------- EVIDENCE: the actual reported post ----------
+  async function buildAnimalEvidence(animalId) {
+    if (!animalId) return `<div class="evidence-box missing">Original post not found (may already be deleted).</div>`;
+    try {
+      const snap = await getDoc(doc(db, "animals", animalId));
+      if (!snap.exists()) {
+        return `<div class="evidence-box missing">⚠️ This post no longer exists - it was already deleted or removed.</div>`;
+      }
+      const a = snap.data();
+      const photo = a.imageUrl || (a.photoUrls && a.photoUrls[0]) || "";
+      return `
+        <div class="evidence-box">
+          <div class="evidence-label">Actual reported post:</div>
+          <div class="evidence-post">
+            ${photo ? `<img src="${photo}" class="evidence-photo" />` : `<div class="evidence-photo placeholder">No photo</div>`}
+            <div>
+              <div style="font-weight:700">${escapeHtml(a.name || "Unnamed")} · ${escapeHtml(a.type || "")}</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px">${escapeHtml(a.description || "No description")}</div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:4px">${escapeHtml(a.city || "")}</div>
+            </div>
+          </div>
+        </div>`;
+    } catch (err) {
+      console.error(err);
+      return `<div class="evidence-box missing">Couldn't load the original post.</div>`;
+    }
+  }
+
+  // ---------- EVIDENCE: surrounding conversation ----------
+  async function buildConversationContext(chatId, reportedMessageId) {
+    if (!chatId) return `<div class="evidence-box missing">No conversation reference saved with this report (older report, before this was tracked).</div>`;
+    try {
+      const messagesQuery = query(
+        collection(db, "chats", chatId, "messages"),
+        orderBy("timestamp", "desc"),
+        limit(15)
+      );
+      const snap = await getDocs(messagesQuery);
+      if (snap.empty) {
+        return `<div class="evidence-box missing">No messages found in this conversation.</div>`;
+      }
+      const messages = [...snap.docs].reverse(); // oldest first for reading order
+
+      const rows = messages.map(m => {
+        const msg = m.data();
+        const isReported = m.id === reportedMessageId;
+        const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString() : "";
+        return `
+          <div class="convo-line ${isReported ? 'flagged' : ''}">
+            <span class="convo-sender">${escapeHtml(msg.senderName || msg.senderId || "?")}</span>
+            <span class="convo-text">${escapeHtml(msg.text || "(no text)")}</span>
+            <span class="convo-time">${time}</span>
+            ${isReported ? '<span class="convo-flag">⚑ reported message</span>' : ''}
+          </div>`;
+      }).join("");
+
+      return `
+        <div class="evidence-box">
+          <div class="evidence-label">Conversation context (last ${messages.length} messages):</div>
+          <div class="convo-transcript">${rows}</div>
+        </div>`;
+    } catch (err) {
+      console.error(err);
+      return `<div class="evidence-box missing">Couldn't load the conversation.</div>`;
     }
   }
 
