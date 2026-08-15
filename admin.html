@@ -92,7 +92,8 @@
   .evidence-box.missing{color:var(--ink-soft);font-size:13.5px;font-style:italic}
   .evidence-label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:10px}
   .evidence-post{display:flex;gap:14px}
-  .evidence-photo{width:72px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0}
+  .evidence-photo{width:72px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:pointer;transition:opacity .15s}
+  .evidence-photo:hover{opacity:.85}
   .evidence-photo.placeholder{background:#E7E2D8;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-soft)}
 
   .convo-transcript{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
@@ -101,6 +102,19 @@
   .convo-sender{font-weight:700;margin-right:6px}
   .convo-time{color:var(--ink-soft);font-size:11.5px;margin-left:8px}
   .convo-flag{display:block;color:var(--brand);font-weight:700;font-size:11px;margin-top:4px}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(34,32,28,.5);
+    align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .modal-overlay.show{display:flex}
+  .modal-box{background:#fff;border-radius:18px;padding:32px;max-width:420px;width:100%;text-align:center}
+  .modal-icon{font-size:36px;margin-bottom:12px}
+  .modal-box h2{font-family:'Fraunces',serif;font-size:22px;margin-bottom:12px}
+  .modal-box p{color:var(--ink-soft);font-size:14.5px;margin-bottom:26px;line-height:1.6}
+  .modal-actions{display:flex;gap:12px;justify-content:center}
+  .modal-actions .action-btn{padding:11px 22px}
+  .modal-actions .danger:disabled{opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -168,6 +182,19 @@
     </div>
     <div id="reportsList"></div>
   </main>
+</div>
+
+<!-- CONFIRMATION MODAL -->
+<div id="confirmModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-icon" id="modalIcon">⚠️</div>
+    <h2 id="modalTitle">Are you sure?</h2>
+    <p id="modalBody"></p>
+    <div class="modal-actions">
+      <button class="action-btn" id="modalCancel">Cancel</button>
+      <button class="action-btn danger" id="modalConfirm" disabled>Confirm (3)</button>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -361,7 +388,7 @@
       } else if (type === "USER") {
         const reporter = await getUserInfo(r.reporterID);
         const reported = await getUserInfo(r.reportedUserId);
-        bodyHtml = `<strong>User account reported</strong>`;
+        bodyHtml = `<strong>User account reported</strong> — <em>Reason given: "${escapeHtml(r.reason || "No reason provided")}"</em>`;
         meta = `Reporter: ${reporter ? `${reporter.name} (${reporter.email})` : "unknown"} &nbsp;•&nbsp; Reported: ${reported ? `${reported.name} (${reported.email})` : "unknown"}`;
       } else {
         bodyHtml = `<strong>${escapeHtml(r.animalName || "Untitled post")}</strong> — <em>Reason given: "${escapeHtml(r.reason || "No reason given")}"</em>`;
@@ -402,7 +429,15 @@
 
   async function handleReportAction(action, reportId, extra) {
     if (action === "resolve") {
-      await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+      showConfirmModal({
+        icon: "✅",
+        title: "Dismiss this report?",
+        body: "This report will be removed from your pending list with no action taken against anyone.",
+        confirmLabel: "Yes, dismiss",
+        onConfirm: async () => {
+          await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+        }
+      });
       return;
     }
 
@@ -412,24 +447,83 @@
         alert("Missing user ID, can't ban.");
         return;
       }
-      if (!confirm("Ban this user? They will no longer be able to post or message anyone.")) return;
+      const info = await getDoc(doc(db, "users", userId));
+      const name = info.exists() ? (info.data().displayName || info.data().name || info.data().email || userId) : userId;
 
-      await updateDoc(doc(db, "users", userId), { banned: true });
-      await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
-      alert("User banned.");
+      showConfirmModal({
+        icon: "🚫",
+        title: `Ban ${name}?`,
+        body: `This person will immediately lose the ability to post or message anyone in Paw Alert. This is a serious action - make sure you've reviewed the evidence above before confirming.`,
+        confirmLabel: "Yes, ban this person",
+        onConfirm: async () => {
+          await updateDoc(doc(db, "users", userId), { banned: true });
+          await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+        }
+      });
       return;
     }
 
     if (action === "delete") {
-      // Note: 'extra' here is the report's own data type, passed via
-      // a separate lookup since delete buttons only exist for
-      // ANIMAL/MESSAGE types where full deletion needs more info
-      // than this simple handler receives - resolving here as a
-      // safe default; use the Android admin screen for the actual
-      // content deletion for now.
-      if (!confirm("This will mark the report resolved. Use the app to actually delete the post/message content for now.")) return;
-      await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+      showConfirmModal({
+        icon: "🗑️",
+        title: "Mark this report resolved?",
+        body: "Note: actually deleting the post or message content still needs to be done from the Android app for now - this only resolves the report itself.",
+        confirmLabel: "Yes, mark resolved",
+        onConfirm: async () => {
+          await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+        }
+      });
     }
+  }
+
+  // A real confirmation screen instead of an instantly-clickable
+  // browser popup - shows exactly what's about to happen, and makes
+  // you wait 3 seconds before the button is even clickable, so a
+  // rushed or accidental click can't ban or resolve anything.
+  function showConfirmModal({ icon, title, body, confirmLabel, onConfirm }) {
+    const modal = document.getElementById("confirmModal");
+    const confirmBtn = document.getElementById("modalConfirm");
+    const cancelBtn = document.getElementById("modalCancel");
+
+    document.getElementById("modalIcon").textContent = icon;
+    document.getElementById("modalTitle").textContent = title;
+    document.getElementById("modalBody").textContent = body;
+
+    let seconds = 3;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = `${confirmLabel} (${seconds})`;
+
+    const countdown = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(countdown);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = confirmLabel;
+      } else {
+        confirmBtn.textContent = `${confirmLabel} (${seconds})`;
+      }
+    }, 1000);
+
+    modal.classList.add("show");
+
+    function cleanup() {
+      clearInterval(countdown);
+      modal.classList.remove("show");
+      confirmBtn.removeEventListener("click", handleConfirm);
+      cancelBtn.removeEventListener("click", handleCancel);
+    }
+
+    async function handleConfirm() {
+      cleanup();
+      await onConfirm();
+    }
+
+    function handleCancel() {
+      cleanup();
+    }
+
+    confirmBtn.addEventListener("click", handleConfirm);
+    cancelBtn.addEventListener("click", handleCancel);
   }
 
   // ---------- EVIDENCE: the actual reported post ----------
@@ -446,7 +540,7 @@
         <div class="evidence-box">
           <div class="evidence-label">Actual reported post:</div>
           <div class="evidence-post">
-            ${photo ? `<img src="${photo}" class="evidence-photo" />` : `<div class="evidence-photo placeholder">No photo</div>`}
+            ${photo ? `<a href="${photo}" target="_blank" rel="noopener noreferrer"><img src="${photo}" class="evidence-photo" title="Click to view full size" /></a>` : `<div class="evidence-photo placeholder">No photo</div>`}
             <div>
               <div style="font-weight:700">${escapeHtml(a.name || "Unnamed")} · ${escapeHtml(a.type || "")}</div>
               <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px">${escapeHtml(a.description || "No description")}</div>
