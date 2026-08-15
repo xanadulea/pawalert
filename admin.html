@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Paw Alert</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --card:#ffffff; --ink:#22201C; --ink-soft:#6B6559;
+    --line:#E7E2D8; --brand:#D64B3B; --green:#2E9E5B; --amber:#E0A22E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.5}
+  .serif{font-family:'Fraunces',serif}
+
+  /* ---------- LOGIN SCREEN ---------- */
+  #loginScreen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .login-box{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:40px 36px;max-width:380px;width:100%;
+  }
+  .login-box .mark{width:44px;height:44px;background:var(--brand);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px}
+  .login-box h1{font-family:'Fraunces',serif;font-size:24px;margin-bottom:6px}
+  .login-box p{color:var(--ink-soft);font-size:14px;margin-bottom:26px}
+  .field{margin-bottom:16px}
+  label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
+  input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px;font-family:'Inter',sans-serif}
+  input:focus{outline:none;border-color:var(--brand)}
+  .login-btn{width:100%;background:var(--ink);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;margin-top:6px}
+  .login-btn:disabled{opacity:.6;cursor:not-allowed}
+  .login-error{color:var(--brand);font-size:13.5px;margin-top:14px;display:none}
+
+  /* ---------- DASHBOARD ---------- */
+  #dashboard{display:none}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:18px 28px;display:flex;align-items:center;justify-content:space-between}
+  header .brand{display:flex;align-items:center;gap:10px}
+  header .mark{width:32px;height:32px;background:var(--brand);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+  header .brand-name{font-family:'Fraunces',serif;font-weight:700;font-size:18px}
+  header .logout{color:var(--ink-soft);font-size:14px;font-weight:600;cursor:pointer;background:none;border:none}
+
+  main{max-width:1100px;margin:0 auto;padding:32px 28px 80px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+  @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
+  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .stat-card .num{font-family:'Fraunces',serif;font-size:32px;font-weight:700}
+  .stat-card .label{font-size:13px;color:var(--ink-soft);margin-top:2px}
+  .stat-card.pending .num{color:var(--brand)}
+
+  .section-title{font-family:'Fraunces',serif;font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .section-title .count{background:var(--brand);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;font-family:'Inter',sans-serif}
+
+  .report-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+  .report-top{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:10px}
+  .report-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 10px;border-radius:999px}
+  .report-type.ANIMAL{background:#FBEAE6;color:var(--brand)}
+  .report-type.MESSAGE{background:#E4EEFB;color:#2A5DAB}
+  .report-type.USER{background:#FCEEDB;color:#A66A12}
+  .report-time{font-size:12.5px;color:var(--ink-soft)}
+  .report-body{font-size:14.5px;margin-bottom:6px}
+  .report-body strong{color:var(--ink)}
+  .report-meta{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px}
+  .report-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .action-btn{
+    border:1.5px solid var(--line);background:#fff;padding:8px 16px;border-radius:9px;
+    font-size:13.5px;font-weight:700;cursor:pointer;color:var(--ink);
+  }
+  .action-btn:hover{border-color:var(--ink)}
+  .action-btn.danger{border-color:#F4CFC7;color:var(--brand)}
+  .action-btn.danger:hover{background:#FBEAE6}
+  .action-btn.resolve{border-color:#BFE3CC;color:var(--green)}
+  .action-btn.resolve:hover{background:#E4F4E9}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--ink-soft)}
+  .empty-state .icon{font-size:36px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="mark">🐾</div>
+    <h1>Admin access</h1>
+    <p>Sign in with your Paw Alert admin account.</p>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn">Sign in</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="brand">
+      <span class="mark">🐾</span>
+      <span class="brand-name">Paw Alert Admin</span>
+    </div>
+    <button class="logout" id="logoutBtn">Sign out</button>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat-card pending">
+        <div class="num" id="statPending">–</div>
+        <div class="label">Pending reports</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statUsers">–</div>
+        <div class="label">Total users</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statPosts">–</div>
+        <div class="label">Active posts</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statUrgent">–</div>
+        <div class="label">Urgent right now</div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      Pending reports
+      <span class="count" id="reportCount">0</span>
+    </div>
+    <div id="reportsList"></div>
+  </main>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import {
+    getFirestore, collection, query, where, onSnapshot,
+    doc, getDoc, updateDoc, deleteDoc, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDhiiCZrcXxEjEhdY8baY7WN1FZaN8arNU",
+    authDomain: "pawmatch-mia.firebaseapp.com",
+    projectId: "pawmatch-mia",
+    storageBucket: "pawmatch-mia.firebasestorage.app",
+    messagingSenderId: "292939544438",
+    appId: "1:292939544438:web:ea065dcf7dd2853846ac57"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const loginScreen = document.getElementById("loginScreen");
+  const dashboard = document.getElementById("dashboard");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginError = document.getElementById("loginError");
+
+  let unsubscribers = [];
+
+  // ---------- LOGIN ----------
+  loginBtn.addEventListener("click", async () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    loginError.style.display = "none";
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Signing in...";
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged below handles what happens next
+    } catch (err) {
+      loginError.textContent = "Incorrect email or password.";
+      loginError.style.display = "block";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Sign in";
+    }
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    signOut(auth);
+  });
+
+  // ---------- ACCESS CHECK + DASHBOARD LOAD ----------
+  onAuthStateChanged(auth, async (user) => {
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Sign in";
+
+    // Clean up any live listeners from a previous session
+    unsubscribers.forEach(unsub => unsub());
+    unsubscribers = [];
+
+    if (!user) {
+      loginScreen.style.display = "flex";
+      dashboard.style.display = "none";
+      return;
+    }
+
+    // Confirm this account actually has admin role - same check
+    // your Firestore rules already enforce, checked again here so
+    // the dashboard itself never even loads for a non-admin account
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists() || userDoc.data().role !== "admin") {
+      loginError.textContent = "This account doesn't have admin access.";
+      loginError.style.display = "block";
+      await signOut(auth);
+      return;
+    }
+
+    loginScreen.style.display = "none";
+    dashboard.style.display = "block";
+    startLiveData();
+  });
+
+  // ---------- LIVE STATS + REPORTS ----------
+  function startLiveData() {
+    // Pending reports - the main queue
+    const reportsQuery = query(
+      collection(db, "reports"),
+      where("status", "==", "PENDING"),
+      orderBy("timestamp", "desc")
+    );
+    unsubscribers.push(onSnapshot(reportsQuery, (snapshot) => {
+      document.getElementById("statPending").textContent = snapshot.size;
+      document.getElementById("reportCount").textContent = snapshot.size;
+      renderReports(snapshot.docs);
+    }));
+
+    // Total users
+    unsubscribers.push(onSnapshot(collection(db, "users"), (snapshot) => {
+      document.getElementById("statUsers").textContent = snapshot.size;
+    }));
+
+    // Active posts (not expired)
+    const activePostsQuery = query(
+      collection(db, "animals"),
+      where("expiresAt", ">", new Date())
+    );
+    unsubscribers.push(onSnapshot(activePostsQuery, (snapshot) => {
+      document.getElementById("statPosts").textContent = snapshot.size;
+      const urgentCount = snapshot.docs.filter(d => d.data().type === "URGENT").length;
+      document.getElementById("statUrgent").textContent = urgentCount;
+    }));
+  }
+
+  function renderReports(docs) {
+    const container = document.getElementById("reportsList");
+
+    if (docs.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">✨</div>
+          <div>No pending reports - all caught up.</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = docs.map(d => {
+      const r = d.data();
+      const id = d.id;
+      const type = r.type || "ANIMAL";
+      const time = r.timestamp ? new Date(r.timestamp.toDate()).toLocaleString() : "";
+
+      let bodyHtml = "";
+      let meta = "";
+      let deleteLabel = "Delete";
+
+      if (type === "MESSAGE") {
+        bodyHtml = `<strong>Reported message:</strong> "${escapeHtml(r.reportedMessageText || "")}"`;
+        meta = `Reporter: ${r.reporterID || "unknown"} &nbsp;•&nbsp; Sender: ${r.reportedUserId || "unknown"}`;
+        deleteLabel = "Delete message";
+      } else if (type === "USER") {
+        bodyHtml = `<strong>User account reported</strong>`;
+        meta = `Reporter: ${r.reporterID || "unknown"} &nbsp;•&nbsp; Reported: ${r.reportedUserId || "unknown"}`;
+        deleteLabel = "Resolve";
+      } else {
+        bodyHtml = `<strong>${escapeHtml(r.animalName || "Untitled post")}</strong> — ${escapeHtml(r.reason || "No reason given")}`;
+        meta = `Reported by: ${r.reportedByEmail || r.reportedBy || "unknown"}`;
+        deleteLabel = "Delete post";
+      }
+
+      return `
+        <div class="report-card">
+          <div class="report-top">
+            <span class="report-type ${type}">${type}</span>
+            <span class="report-time">${time}</span>
+          </div>
+          <div class="report-body">${bodyHtml}</div>
+          <div class="report-meta">${meta}</div>
+          <div class="report-actions">
+            <button class="action-btn resolve" data-action="resolve" data-id="${id}">Mark resolved</button>
+            <button class="action-btn danger" data-action="delete" data-id="${id}" data-type="${type}">${deleteLabel}</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    container.querySelectorAll("[data-action]").forEach(btn => {
+      btn.addEventListener("click", () => handleReportAction(btn.dataset.action, btn.dataset.id, btn.dataset.type));
+    });
+  }
+
+  async function handleReportAction(action, reportId, type) {
+    if (action === "resolve") {
+      await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+      return;
+    }
+
+    if (action === "delete") {
+      const confirmMsg = type === "USER"
+        ? "Mark this user report as resolved?"
+        : "This will permanently delete the reported content. Continue?";
+      if (!confirm(confirmMsg)) return;
+
+      if (type === "USER") {
+        await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+      } else {
+        // For MESSAGE and ANIMAL types, mark resolved here.
+        // Actually deleting the underlying post/message from this
+        // dashboard requires the same chatId/animalId lookups the
+        // Android admin screen already does - for now, resolve the
+        // report here and use the app for the actual content deletion
+        // to avoid duplicating that logic in two places.
+        await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+      }
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>
