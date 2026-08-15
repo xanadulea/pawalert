@@ -258,16 +258,28 @@
   // ---------- LIVE STATS + REPORTS ----------
   function startLiveData() {
     // Pending reports - the main queue
+    // (sorting happens after fetching, not in the query itself, so
+    // this doesn't require a special Firestore composite index)
     const reportsQuery = query(
       collection(db, "reports"),
-      where("status", "==", "PENDING"),
-      orderBy("timestamp", "desc")
+      where("status", "==", "PENDING")
     );
-    unsubscribers.push(onSnapshot(reportsQuery, (snapshot) => {
-      document.getElementById("statPending").textContent = snapshot.size;
-      document.getElementById("reportCount").textContent = snapshot.size;
-      renderReports(snapshot.docs);
-    }));
+    unsubscribers.push(onSnapshot(reportsQuery,
+      (snapshot) => {
+        const sortedDocs = [...snapshot.docs].sort((a, b) => {
+          const aTime = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+          const bTime = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+          return bTime - aTime;
+        });
+        document.getElementById("statPending").textContent = snapshot.size;
+        document.getElementById("reportCount").textContent = snapshot.size;
+        renderReports(sortedDocs);
+      },
+      (error) => {
+        console.error("Reports listener failed:", error);
+        document.getElementById("statPending").textContent = "!";
+      }
+    ));
 
     // Total users
     unsubscribers.push(onSnapshot(collection(db, "users"), (snapshot) => {
