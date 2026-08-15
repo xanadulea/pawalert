@@ -538,11 +538,21 @@
       const textArea = document.getElementById("inboxReplyText");
       const text = textArea.value.trim();
       if (!text) return;
-      await updateDoc(doc(db, "chats", chatId), { lastMessage: text, lastMessageTime: Timestamp.now(), lastMessageSender: "admin" });
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
-      });
-      textArea.value = "";
+      try {
+        await setDoc(doc(db, "chats", chatId), {
+          participants: ["admin", userId],
+          lastMessage: text,
+          lastMessageTime: Timestamp.now(),
+          lastMessageSender: "admin"
+        }, { merge: true });
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+        });
+        textArea.value = "";
+      } catch (err) {
+        console.error("Failed to send:", err);
+        alert("Failed to send. Check the console for details.");
+      }
     });
   }
 
