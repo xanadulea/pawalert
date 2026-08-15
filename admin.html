@@ -242,6 +242,7 @@
         <h3>Broadcast to everyone</h3>
         <p class="hint">Sends a message to every current user's "Paw Alert News" conversation. Use for real announcements only.</p>
         <textarea id="broadcastText" placeholder="What's new?"></textarea>
+        <button class="action-btn resolve" id="testBroadcastBtn">Send test to myself only</button>
         <button class="action-btn danger" id="sendBroadcastBtn">Send to all users</button>
       </div>
     </div>
@@ -763,6 +764,28 @@
     const status = document.getElementById("welcomeSaveStatus");
     status.style.display = "inline";
     setTimeout(() => { status.style.display = "none"; }, 2500);
+  });
+
+  document.getElementById("testBroadcastBtn").addEventListener("click", async () => {
+    const text = document.getElementById("broadcastText").value.trim();
+    if (!text) return;
+    if (!currentAdminUid) { alert("Not signed in properly."); return; }
+
+    const chatId = `admin_news_${currentAdminUid}`;
+    const chatRef = doc(db, "chats", chatId);
+    await setDoc(chatRef, {
+      participants: ["admin", currentAdminUid],
+      animalName: "📰 Paw Alert News (TEST)",
+      animalImageUrl: "",
+      lastMessage: text,
+      lastMessageTime: Timestamp.now(),
+      lastMessageSender: "admin",
+      createdAt: Timestamp.now()
+    }, { merge: true });
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+    });
+    alert("Test sent - check your own account's Messages tab in the app. Nobody else received this.");
   });
 
   document.getElementById("sendBroadcastBtn").addEventListener("click", async () => {
