@@ -17,29 +17,20 @@
   .serif{font-family:'Fraunces',serif}
 
   /* ---------- LOGIN SCREEN ---------- */
-  #loginScreen{
-    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
-  }
-  .login-box{
-    background:var(--card);border:1px solid var(--line);border-radius:18px;
-    padding:40px 36px;max-width:380px;width:100%;
-  }
+  #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login-box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:40px 36px;max-width:380px;width:100%}
   .login-box .mark{width:44px;height:44px;background:var(--brand);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px}
   .login-box h1{font-family:'Fraunces',serif;font-size:24px;margin-bottom:6px}
   .login-box p{color:var(--ink-soft);font-size:14px;margin-bottom:26px}
   .field{margin-bottom:16px}
   label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
-  input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px;font-family:'Inter',sans-serif}
-  input:focus{outline:none;border-color:var(--brand)}
+  input, textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px;font-family:'Inter',sans-serif}
+  input:focus, textarea:focus{outline:none;border-color:var(--brand)}
+  textarea{resize:vertical}
   .login-btn{width:100%;background:var(--ink);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;margin-top:6px}
   .login-btn:disabled{opacity:.6;cursor:not-allowed}
   .login-error{color:var(--brand);font-size:13.5px;margin-top:14px;display:none}
-
-  .google-btn{
-    width:100%;background:#fff;color:var(--ink);border:1.5px solid var(--line);
-    padding:12px;border-radius:10px;font-weight:700;font-size:14.5px;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Inter',sans-serif;
-  }
+  .google-btn{width:100%;background:#fff;color:var(--ink);border:1.5px solid var(--line);padding:12px;border-radius:10px;font-weight:700;font-size:14.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Inter',sans-serif}
   .google-btn:hover{background:#F5F3EF}
   .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink-soft);font-size:12.5px}
   .divider::before, .divider::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -54,16 +45,27 @@
 
   main{max-width:1100px;margin:0 auto;padding:32px 28px 80px}
 
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
   @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
   .stat-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
   .stat-card .num{font-family:'Fraunces',serif;font-size:32px;font-weight:700}
   .stat-card .label{font-size:13px;color:var(--ink-soft);margin-top:2px}
   .stat-card.pending .num{color:var(--brand)}
 
+  /* ---------- TABS ---------- */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:28px}
+  .tab-btn{background:none;border:none;padding:12px 18px;font-size:14.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;border-bottom:2.5px solid transparent;font-family:'Inter',sans-serif}
+  .tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
   .section-title{font-family:'Fraunces',serif;font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
   .section-title .count{background:var(--brand);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;font-family:'Inter',sans-serif}
 
+  .search-bar{margin-bottom:20px}
+  .search-bar input{max-width:320px}
+
+  /* ---------- REPORT CARDS ---------- */
   .report-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
   .report-top{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:10px}
   .report-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 10px;border-radius:999px}
@@ -75,15 +77,13 @@
   .report-body strong{color:var(--ink)}
   .report-meta{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px}
   .report-actions{display:flex;gap:10px;flex-wrap:wrap}
-  .action-btn{
-    border:1.5px solid var(--line);background:#fff;padding:8px 16px;border-radius:9px;
-    font-size:13.5px;font-weight:700;cursor:pointer;color:var(--ink);
-  }
+  .action-btn{border:1.5px solid var(--line);background:#fff;padding:8px 16px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;color:var(--ink);font-family:'Inter',sans-serif}
   .action-btn:hover{border-color:var(--ink)}
   .action-btn.danger{border-color:#F4CFC7;color:var(--brand)}
   .action-btn.danger:hover{background:#FBEAE6}
   .action-btn.resolve{border-color:#BFE3CC;color:var(--green)}
   .action-btn.resolve:hover{background:#E4F4E9}
+  .action-btn.small{padding:6px 12px;font-size:12.5px}
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--ink-soft)}
   .empty-state .icon{font-size:36px;margin-bottom:10px}
@@ -103,10 +103,36 @@
   .convo-time{color:var(--ink-soft);font-size:11.5px;margin-left:8px}
   .convo-flag{display:block;color:var(--brand);font-weight:700;font-size:11px;margin-top:4px}
 
-  .modal-overlay{
-    display:none;position:fixed;inset:0;background:rgba(34,32,28,.5);
-    align-items:center;justify-content:center;z-index:100;padding:20px;
-  }
+  /* ---------- USERS TAB ---------- */
+  .user-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .user-row .info{display:flex;flex-direction:column}
+  .user-row .name{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px}
+  .user-row .email{font-size:13px;color:var(--ink-soft)}
+  .banned-badge{background:var(--brand);color:#fff;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase}
+  .user-row .row-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+  .message-panel{display:none;background:#FAF9F6;border-radius:10px;padding:14px;margin-top:10px}
+  .message-panel.show{display:block}
+  .message-panel textarea{min-height:70px;margin-bottom:10px}
+
+  /* ---------- POSTS TAB ---------- */
+  .post-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+  .post-row img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0}
+  .post-row .no-photo{width:52px;height:52px;border-radius:8px;background:#E7E2D8;flex-shrink:0}
+  .post-row .info{flex:1;min-width:0}
+  .post-row .name{font-weight:700;font-size:14.5px}
+  .post-row .meta{font-size:12.5px;color:var(--ink-soft)}
+  .post-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+
+  /* ---------- MESSAGES TAB ---------- */
+  .settings-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:24px}
+  .settings-card h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:6px}
+  .settings-card p.hint{color:var(--ink-soft);font-size:13.5px;margin-bottom:16px}
+  .settings-card textarea{min-height:160px;margin-bottom:14px}
+  .save-status{font-size:13px;color:var(--green);margin-left:12px;display:none}
+
+  /* ---------- MODAL ---------- */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(34,32,28,.5);align-items:center;justify-content:center;z-index:100;padding:20px}
   .modal-overlay.show{display:flex}
   .modal-box{background:#fff;border-radius:18px;padding:32px;max-width:420px;width:100%;text-align:center}
   .modal-icon{font-size:36px;margin-bottom:12px}
@@ -176,11 +202,49 @@
       </div>
     </div>
 
-    <div class="section-title">
-      Pending reports
-      <span class="count" id="reportCount">0</span>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="reports">Reports</button>
+      <button class="tab-btn" data-tab="users">Users</button>
+      <button class="tab-btn" data-tab="posts">Posts</button>
+      <button class="tab-btn" data-tab="messages">Messages</button>
     </div>
-    <div id="reportsList"></div>
+
+    <!-- REPORTS TAB -->
+    <div class="tab-panel active" id="tab-reports">
+      <div class="section-title">Pending reports <span class="count" id="reportCount">0</span></div>
+      <div id="reportsList"></div>
+    </div>
+
+    <!-- USERS TAB -->
+    <div class="tab-panel" id="tab-users">
+      <div class="section-title">All users <span class="count" id="userCount">0</span></div>
+      <div class="search-bar"><input type="text" id="userSearch" placeholder="Search by name or email..."></div>
+      <div id="usersList"></div>
+    </div>
+
+    <!-- POSTS TAB -->
+    <div class="tab-panel" id="tab-posts">
+      <div class="section-title">All active posts <span class="count" id="postsCount">0</span></div>
+      <div id="postsList"></div>
+    </div>
+
+    <!-- MESSAGES TAB -->
+    <div class="tab-panel" id="tab-messages">
+      <div class="settings-card">
+        <h3>Welcome message</h3>
+        <p class="hint">Sent automatically to every new person who joins Paw Alert. Editing this updates it live for all future sign-ups.</p>
+        <textarea id="welcomeMessageText" placeholder="Loading..."></textarea>
+        <button class="action-btn resolve" id="saveWelcomeBtn">Save welcome message</button>
+        <span class="save-status" id="welcomeSaveStatus">✓ Saved</span>
+      </div>
+
+      <div class="settings-card">
+        <h3>Broadcast to everyone</h3>
+        <p class="hint">Sends a message to every current user's "Paw Alert News" conversation. Use for real announcements only.</p>
+        <textarea id="broadcastText" placeholder="What's new?"></textarea>
+        <button class="action-btn danger" id="sendBroadcastBtn">Send to all users</button>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -205,7 +269,7 @@
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, collection, query, where, onSnapshot,
-    doc, getDoc, getDocs, updateDoc, deleteDoc, orderBy, limit
+    doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, orderBy, limit, addDoc, Timestamp
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -227,6 +291,18 @@
   const loginError = document.getElementById("loginError");
 
   let unsubscribers = [];
+  let allUsersCache = [];
+  let currentAdminUid = null;
+
+  // ---------- TABS ----------
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+    });
+  });
 
   // ---------- GOOGLE LOGIN ----------
   document.getElementById("googleBtn").addEventListener("click", async () => {
@@ -234,7 +310,6 @@
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged below handles what happens next
     } catch (err) {
       console.error(err);
       loginError.textContent = "Google sign-in failed. Please try again.";
@@ -242,17 +317,15 @@
     }
   });
 
-  // ---------- LOGIN ----------
+  // ---------- EMAIL LOGIN ----------
   loginBtn.addEventListener("click", async () => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     loginError.style.display = "none";
     loginBtn.disabled = true;
     loginBtn.textContent = "Signing in...";
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged below handles what happens next
     } catch (err) {
       loginError.textContent = "Incorrect email or password.";
       loginError.style.display = "block";
@@ -261,16 +334,12 @@
     }
   });
 
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    signOut(auth);
-  });
+  document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
 
   // ---------- ACCESS CHECK + DASHBOARD LOAD ----------
   onAuthStateChanged(auth, async (user) => {
     loginBtn.disabled = false;
     loginBtn.textContent = "Sign in";
-
-    // Clean up any live listeners from a previous session
     unsubscribers.forEach(unsub => unsub());
     unsubscribers = [];
 
@@ -280,9 +349,6 @@
       return;
     }
 
-    // Confirm this account actually has admin role - same check
-    // your Firestore rules already enforce, checked again here so
-    // the dashboard itself never even loads for a non-admin account
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (!userDoc.exists() || userDoc.data().role !== "admin") {
       loginError.textContent = "This account doesn't have admin access.";
@@ -291,20 +357,16 @@
       return;
     }
 
+    currentAdminUid = user.uid;
     loginScreen.style.display = "none";
     dashboard.style.display = "block";
     startLiveData();
+    loadWelcomeMessage();
   });
 
   // ---------- LIVE STATS + REPORTS ----------
   function startLiveData() {
-    // Pending reports - the main queue
-    // (sorting happens after fetching, not in the query itself, so
-    // this doesn't require a special Firestore composite index)
-    const reportsQuery = query(
-      collection(db, "reports"),
-      where("status", "==", "PENDING")
-    );
+    const reportsQuery = query(collection(db, "reports"), where("status", "==", "PENDING"));
     unsubscribers.push(onSnapshot(reportsQuery,
       (snapshot) => {
         const sortedDocs = [...snapshot.docs].sort((a, b) => {
@@ -322,37 +384,31 @@
       }
     ));
 
-    // Total users
     unsubscribers.push(onSnapshot(collection(db, "users"), (snapshot) => {
       document.getElementById("statUsers").textContent = snapshot.size;
+      document.getElementById("userCount").textContent = snapshot.size;
+      allUsersCache = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderUsers(allUsersCache);
     }));
 
-    // Active posts (not expired)
-    const activePostsQuery = query(
-      collection(db, "animals"),
-      where("expiresAt", ">", new Date())
-    );
+    const activePostsQuery = query(collection(db, "animals"), where("expiresAt", ">", new Date()));
     unsubscribers.push(onSnapshot(activePostsQuery, (snapshot) => {
       document.getElementById("statPosts").textContent = snapshot.size;
       const urgentCount = snapshot.docs.filter(d => d.data().type === "URGENT").length;
       document.getElementById("statUrgent").textContent = urgentCount;
+      document.getElementById("postsCount").textContent = snapshot.size;
+      renderPosts(snapshot.docs);
     }));
   }
 
+  // ================= REPORTS =================
   async function renderReports(docs) {
     const container = document.getElementById("reportsList");
-
     if (docs.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="icon">✨</div>
-          <div>No pending reports - all caught up.</div>
-        </div>`;
+      container.innerHTML = `<div class="empty-state"><div class="icon">✨</div><div>No pending reports - all caught up.</div></div>`;
       return;
     }
 
-    // Look up the real name/email behind every user ID involved,
-    // so you're never staring at a meaningless string of characters
     const userCache = {};
     async function getUserInfo(userId) {
       if (!userId || userId === "admin") return null;
@@ -364,9 +420,7 @@
           : { name: "(deleted account)", email: "" };
         userCache[userId] = info;
         return info;
-      } catch {
-        return { name: "(couldn't load)", email: "" };
-      }
+      } catch { return { name: "(couldn't load)", email: "" }; }
     }
 
     const cardsHtml = await Promise.all(docs.map(async (d) => {
@@ -374,10 +428,7 @@
       const id = d.id;
       const type = r.type || "ANIMAL";
       const time = r.timestamp ? new Date(r.timestamp.toDate()).toLocaleString() : "";
-
-      let bodyHtml = "";
-      let meta = "";
-      let evidenceHtml = "";
+      let bodyHtml = "", meta = "", evidenceHtml = "";
 
       if (type === "MESSAGE") {
         const reporter = await getUserInfo(r.reporterID);
@@ -396,12 +447,11 @@
         evidenceHtml = await buildAnimalEvidence(r.animalId);
       }
 
-      // Build the right set of action buttons for this report type
       let actionsHtml = `<button class="action-btn resolve" data-action="resolve" data-id="${id}">Dismiss (no action)</button>`;
       if (type === "ANIMAL") {
-        actionsHtml += `<button class="action-btn danger" data-action="delete" data-id="${id}" data-type="${type}">Delete post</button>`;
+        actionsHtml += `<button class="action-btn danger" data-action="delete-animal" data-id="${id}" data-animalid="${r.animalId}">Delete post</button>`;
       } else if (type === "MESSAGE") {
-        actionsHtml += `<button class="action-btn danger" data-action="delete" data-id="${id}" data-type="${type}">Delete message</button>`;
+        actionsHtml += `<button class="action-btn danger" data-action="delete-message" data-id="${id}" data-chatid="${r.chatId}" data-messageid="${r.reportedMessageId}">Delete message</button>`;
         actionsHtml += `<button class="action-btn danger" data-action="ban" data-id="${id}" data-userid="${r.reportedUserId}">Ban sender</button>`;
       } else if (type === "USER") {
         actionsHtml += `<button class="action-btn danger" data-action="ban" data-id="${id}" data-userid="${r.reportedUserId}">Ban this user</button>`;
@@ -409,10 +459,7 @@
 
       return `
         <div class="report-card">
-          <div class="report-top">
-            <span class="report-type ${type}">${type}</span>
-            <span class="report-time">${time}</span>
-          </div>
+          <div class="report-top"><span class="report-type ${type}">${type}</span><span class="report-time">${time}</span></div>
           <div class="report-body">${bodyHtml}</div>
           <div class="report-meta">${meta}</div>
           ${evidenceHtml}
@@ -421,70 +468,70 @@
     }));
 
     container.innerHTML = cardsHtml.join("");
-
     container.querySelectorAll("[data-action]").forEach(btn => {
-      btn.addEventListener("click", () => handleReportAction(btn.dataset.action, btn.dataset.id, btn.dataset.userid));
+      btn.addEventListener("click", () => handleReportAction(btn.dataset));
     });
   }
 
-  async function handleReportAction(action, reportId, extra) {
+  async function handleReportAction(data) {
+    const { action, id, userid, animalid, chatid, messageid } = data;
+
     if (action === "resolve") {
       showConfirmModal({
-        icon: "✅",
-        title: "Dismiss this report?",
+        icon: "✅", title: "Dismiss this report?",
         body: "This report will be removed from your pending list with no action taken against anyone.",
         confirmLabel: "Yes, dismiss",
-        onConfirm: async () => {
-          await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
-        }
+        onConfirm: async () => { await updateDoc(doc(db, "reports", id), { status: "RESOLVED" }); }
       });
       return;
     }
 
     if (action === "ban") {
-      const userId = extra;
-      if (!userId) {
-        alert("Missing user ID, can't ban.");
-        return;
-      }
-      const info = await getDoc(doc(db, "users", userId));
-      const name = info.exists() ? (info.data().displayName || info.data().name || info.data().email || userId) : userId;
-
+      if (!userid) { alert("Missing user ID, can't ban."); return; }
+      const info = await getDoc(doc(db, "users", userid));
+      const name = info.exists() ? (info.data().displayName || info.data().name || info.data().email || userid) : userid;
       showConfirmModal({
-        icon: "🚫",
-        title: `Ban ${name}?`,
-        body: `This person will immediately lose the ability to post or message anyone in Paw Alert. This is a serious action - make sure you've reviewed the evidence above before confirming.`,
+        icon: "🚫", title: `Ban ${name}?`,
+        body: `This person will immediately lose the ability to post or message anyone in Paw Alert. Make sure you've reviewed the evidence above before confirming.`,
         confirmLabel: "Yes, ban this person",
         onConfirm: async () => {
-          await updateDoc(doc(db, "users", userId), { banned: true });
-          await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+          await updateDoc(doc(db, "users", userid), { banned: true });
+          await updateDoc(doc(db, "reports", id), { status: "RESOLVED" });
         }
       });
       return;
     }
 
-    if (action === "delete") {
+    if (action === "delete-animal") {
       showConfirmModal({
-        icon: "🗑️",
-        title: "Mark this report resolved?",
-        body: "Note: actually deleting the post or message content still needs to be done from the Android app for now - this only resolves the report itself.",
-        confirmLabel: "Yes, mark resolved",
+        icon: "🗑️", title: "Delete this post?",
+        body: "This permanently removes the post from the map and browse screens. This cannot be undone.",
+        confirmLabel: "Yes, delete post",
         onConfirm: async () => {
-          await updateDoc(doc(db, "reports", reportId), { status: "RESOLVED" });
+          if (animalid) await deleteDoc(doc(db, "animals", animalid));
+          await updateDoc(doc(db, "reports", id), { status: "RESOLVED" });
+        }
+      });
+      return;
+    }
+
+    if (action === "delete-message") {
+      showConfirmModal({
+        icon: "🗑️", title: "Delete this message?",
+        body: "This removes it from the conversation for both people. This cannot be undone.",
+        confirmLabel: "Yes, delete message",
+        onConfirm: async () => {
+          if (chatid && messageid) await deleteDoc(doc(db, "chats", chatid, "messages", messageid));
+          await updateDoc(doc(db, "reports", id), { status: "RESOLVED" });
         }
       });
     }
   }
 
-  // A real confirmation screen instead of an instantly-clickable
-  // browser popup - shows exactly what's about to happen, and makes
-  // you wait 3 seconds before the button is even clickable, so a
-  // rushed or accidental click can't ban or resolve anything.
   function showConfirmModal({ icon, title, body, confirmLabel, onConfirm }) {
     const modal = document.getElementById("confirmModal");
     const confirmBtn = document.getElementById("modalConfirm");
     const cancelBtn = document.getElementById("modalCancel");
-
     document.getElementById("modalIcon").textContent = icon;
     document.getElementById("modalTitle").textContent = title;
     document.getElementById("modalBody").textContent = body;
@@ -492,7 +539,6 @@
     let seconds = 3;
     confirmBtn.disabled = true;
     confirmBtn.textContent = `${confirmLabel} (${seconds})`;
-
     const countdown = setInterval(() => {
       seconds--;
       if (seconds <= 0) {
@@ -505,35 +551,23 @@
     }, 1000);
 
     modal.classList.add("show");
-
     function cleanup() {
       clearInterval(countdown);
       modal.classList.remove("show");
       confirmBtn.removeEventListener("click", handleConfirm);
       cancelBtn.removeEventListener("click", handleCancel);
     }
-
-    async function handleConfirm() {
-      cleanup();
-      await onConfirm();
-    }
-
-    function handleCancel() {
-      cleanup();
-    }
-
+    async function handleConfirm() { cleanup(); await onConfirm(); }
+    function handleCancel() { cleanup(); }
     confirmBtn.addEventListener("click", handleConfirm);
     cancelBtn.addEventListener("click", handleCancel);
   }
 
-  // ---------- EVIDENCE: the actual reported post ----------
   async function buildAnimalEvidence(animalId) {
     if (!animalId) return `<div class="evidence-box missing">Original post not found (may already be deleted).</div>`;
     try {
       const snap = await getDoc(doc(db, "animals", animalId));
-      if (!snap.exists()) {
-        return `<div class="evidence-box missing">⚠️ This post no longer exists - it was already deleted or removed.</div>`;
-      }
+      if (!snap.exists()) return `<div class="evidence-box missing">⚠️ This post no longer exists.</div>`;
       const a = snap.data();
       const photo = a.imageUrl || (a.photoUrls && a.photoUrls[0]) || "";
       return `
@@ -548,27 +582,16 @@
             </div>
           </div>
         </div>`;
-    } catch (err) {
-      console.error(err);
-      return `<div class="evidence-box missing">Couldn't load the original post.</div>`;
-    }
+    } catch (err) { console.error(err); return `<div class="evidence-box missing">Couldn't load the original post.</div>`; }
   }
 
-  // ---------- EVIDENCE: surrounding conversation ----------
   async function buildConversationContext(chatId, reportedMessageId) {
-    if (!chatId) return `<div class="evidence-box missing">No conversation reference saved with this report (older report, before this was tracked).</div>`;
+    if (!chatId) return `<div class="evidence-box missing">No conversation reference saved with this report.</div>`;
     try {
-      const messagesQuery = query(
-        collection(db, "chats", chatId, "messages"),
-        orderBy("timestamp", "desc"),
-        limit(15)
-      );
+      const messagesQuery = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "desc"), limit(15));
       const snap = await getDocs(messagesQuery);
-      if (snap.empty) {
-        return `<div class="evidence-box missing">No messages found in this conversation.</div>`;
-      }
-      const messages = [...snap.docs].reverse(); // oldest first for reading order
-
+      if (snap.empty) return `<div class="evidence-box missing">No messages found in this conversation.</div>`;
+      const messages = [...snap.docs].reverse();
       const rows = messages.map(m => {
         const msg = m.data();
         const isReported = m.id === reportedMessageId;
@@ -581,21 +604,201 @@
             ${isReported ? '<span class="convo-flag">⚑ reported message</span>' : ''}
           </div>`;
       }).join("");
+      return `<div class="evidence-box"><div class="evidence-label">Conversation context (last ${messages.length} messages):</div><div class="convo-transcript">${rows}</div></div>`;
+    } catch (err) { console.error(err); return `<div class="evidence-box missing">Couldn't load the conversation.</div>`; }
+  }
 
+  // ================= USERS =================
+  function renderUsers(users) {
+    const container = document.getElementById("usersList");
+    if (users.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">👤</div><div>No users yet.</div></div>`;
+      return;
+    }
+    container.innerHTML = users.map(u => {
+      const name = u.displayName || u.name || "(no name set)";
+      const isBanned = u.banned === true;
       return `
-        <div class="evidence-box">
-          <div class="evidence-label">Conversation context (last ${messages.length} messages):</div>
-          <div class="convo-transcript">${rows}</div>
+        <div class="user-row">
+          <div class="info">
+            <div class="name">${escapeHtml(name)} ${isBanned ? '<span class="banned-badge">Banned</span>' : ''}</div>
+            <div class="email">${escapeHtml(u.email || "")}</div>
+          </div>
+          <div class="row-actions">
+            <button class="action-btn small" data-action="toggle-message" data-id="${u.id}">Message</button>
+            ${isBanned
+              ? `<button class="action-btn small resolve" data-action="unban" data-id="${u.id}" data-name="${escapeHtml(name)}">Unban</button>`
+              : `<button class="action-btn small danger" data-action="ban-direct" data-id="${u.id}" data-name="${escapeHtml(name)}">Ban</button>`
+            }
+          </div>
+          <div class="message-panel" id="msg-panel-${u.id}">
+            <textarea id="msg-text-${u.id}" placeholder="Type a message to send as Paw Alert Support..."></textarea>
+            <button class="action-btn resolve small" data-action="send-message" data-id="${u.id}">Send</button>
+          </div>
         </div>`;
-    } catch (err) {
-      console.error(err);
-      return `<div class="evidence-box missing">Couldn't load the conversation.</div>`;
+    }).join("");
+
+    container.querySelectorAll("[data-action='toggle-message']").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.getElementById(`msg-panel-${btn.dataset.id}`).classList.toggle("show");
+      });
+    });
+    container.querySelectorAll("[data-action='send-message']").forEach(btn => {
+      btn.addEventListener("click", () => sendDirectMessage(btn.dataset.id));
+    });
+    container.querySelectorAll("[data-action='ban-direct']").forEach(btn => {
+      btn.addEventListener("click", () => {
+        showConfirmModal({
+          icon: "🚫", title: `Ban ${btn.dataset.name}?`,
+          body: "This person will immediately lose the ability to post or message anyone in Paw Alert.",
+          confirmLabel: "Yes, ban this person",
+          onConfirm: async () => { await updateDoc(doc(db, "users", btn.dataset.id), { banned: true }); }
+        });
+      });
+    });
+    container.querySelectorAll("[data-action='unban']").forEach(btn => {
+      btn.addEventListener("click", () => {
+        showConfirmModal({
+          icon: "✅", title: `Unban ${btn.dataset.name}?`,
+          body: "This restores their ability to post and message normally.",
+          confirmLabel: "Yes, unban",
+          onConfirm: async () => { await updateDoc(doc(db, "users", btn.dataset.id), { banned: false }); }
+        });
+      });
+    });
+  }
+
+  async function sendDirectMessage(userId) {
+    const textArea = document.getElementById(`msg-text-${userId}`);
+    const text = textArea.value.trim();
+    if (!text) return;
+
+    const chatId = `admin_dm_${userId}`;
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+    if (!chatSnap.exists()) {
+      await setDoc(chatRef, {
+        participants: ["admin", userId],
+        animalName: "💬 Paw Alert Support",
+        animalImageUrl: "",
+        lastMessage: text,
+        lastMessageTime: Timestamp.now(),
+        lastMessageSender: "admin",
+        createdAt: Timestamp.now()
+      });
+    } else {
+      await updateDoc(chatRef, { lastMessage: text, lastMessageTime: Timestamp.now(), lastMessageSender: "admin" });
+    }
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+    });
+    textArea.value = "";
+    document.getElementById(`msg-panel-${userId}`).classList.remove("show");
+    alert("Message sent.");
+  }
+
+  document.getElementById("userSearch").addEventListener("input", (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allUsersCache.filter(u =>
+      (u.displayName || u.name || "").toLowerCase().includes(term) ||
+      (u.email || "").toLowerCase().includes(term)
+    );
+    renderUsers(filtered);
+  });
+
+  // ================= POSTS =================
+  const statusColors = { LOST: "#D64B3B", FOUND: "#2E9E5B", URGENT: "#8355E0", HAPPY: "#E0A22E" };
+
+  function renderPosts(docs) {
+    const container = document.getElementById("postsList");
+    if (docs.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">🐾</div><div>No active posts right now.</div></div>`;
+      return;
+    }
+    container.innerHTML = docs.map(d => {
+      const a = d.data();
+      const photo = a.imageUrl || (a.photoUrls && a.photoUrls[0]) || "";
+      const color = statusColors[a.type] || "#999";
+      return `
+        <div class="post-row">
+          ${photo ? `<img src="${photo}" />` : `<div class="no-photo"></div>`}
+          <div class="info">
+            <div class="name"><span class="post-dot" style="background:${color}"></span>${escapeHtml(a.name || "Unnamed")} · ${escapeHtml(a.type || "")}</div>
+            <div class="meta">${escapeHtml(a.city || "")} — ${escapeHtml(a.description || "")}</div>
+          </div>
+          <button class="action-btn small danger" data-action="delete-post-direct" data-id="${d.id}" data-name="${escapeHtml(a.name || "this post")}">Delete</button>
+        </div>`;
+    }).join("");
+
+    container.querySelectorAll("[data-action='delete-post-direct']").forEach(btn => {
+      btn.addEventListener("click", () => {
+        showConfirmModal({
+          icon: "🗑️", title: `Delete ${btn.dataset.name}?`,
+          body: "This permanently removes the post from the map and browse screens. This cannot be undone.",
+          confirmLabel: "Yes, delete",
+          onConfirm: async () => { await deleteDoc(doc(db, "animals", btn.dataset.id)); }
+        });
+      });
+    });
+  }
+
+  // ================= MESSAGES / SETTINGS =================
+  async function loadWelcomeMessage() {
+    const textarea = document.getElementById("welcomeMessageText");
+    try {
+      const snap = await getDoc(doc(db, "app_settings", "welcomeMessage"));
+      textarea.value = snap.exists() ? (snap.data().text || "") : defaultWelcomeText();
+    } catch {
+      textarea.value = defaultWelcomeText();
     }
   }
 
+  function defaultWelcomeText() {
+    return `🐾 Welcome to Paw Alert!\n\nHey there! 👋\n\nWelcome to Paw Alert — a community of people helping lost pets find home.\n\n📸 See a lost animal? Snap a photo and post it on the map.\n📍 Found a pet? Post it so the owner can find you.\n💬 Message other users to coordinate help.\n🏡 Mark pets as found when they're reunited.\n\nYou're now part of a growing community of animal lovers.\n\nTogether, we help pets find home! 🐾\n\n— The Paw Alert Team`;
+  }
+
+  document.getElementById("saveWelcomeBtn").addEventListener("click", async () => {
+    const text = document.getElementById("welcomeMessageText").value;
+    await setDoc(doc(db, "app_settings", "welcomeMessage"), { text, updatedAt: Timestamp.now() });
+    const status = document.getElementById("welcomeSaveStatus");
+    status.style.display = "inline";
+    setTimeout(() => { status.style.display = "none"; }, 2500);
+  });
+
+  document.getElementById("sendBroadcastBtn").addEventListener("click", async () => {
+    const text = document.getElementById("broadcastText").value.trim();
+    if (!text) return;
+
+    showConfirmModal({
+      icon: "📢", title: `Send this to all ${allUsersCache.length} users?`,
+      body: text,
+      confirmLabel: "Yes, send to everyone",
+      onConfirm: async () => {
+        for (const u of allUsersCache) {
+          const chatId = `admin_news_${u.id}`;
+          const chatRef = doc(db, "chats", chatId);
+          await setDoc(chatRef, {
+            participants: ["admin", u.id],
+            animalName: "📰 Paw Alert News",
+            animalImageUrl: "",
+            lastMessage: text,
+            lastMessageTime: Timestamp.now(),
+            lastMessageSender: "admin",
+            createdAt: Timestamp.now()
+          }, { merge: true });
+          await addDoc(collection(db, "chats", chatId, "messages"), {
+            text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+          });
+        }
+        document.getElementById("broadcastText").value = "";
+        alert("Broadcast sent.");
+      }
+    });
+  });
+
   function escapeHtml(str) {
     const div = document.createElement("div");
-    div.textContent = str;
+    div.textContent = str || "";
     return div.innerHTML;
   }
 </script>
