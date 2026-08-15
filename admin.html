@@ -141,6 +141,21 @@
   .modal-actions{display:flex;gap:12px;justify-content:center}
   .modal-actions .action-btn{padding:11px 22px}
   .modal-actions .danger:disabled{opacity:.5;cursor:not-allowed}
+
+  .inbox-row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+  .inbox-row:hover{border-color:var(--ink)}
+  .inbox-row.active{border-color:var(--brand);background:#FBEAE6}
+  .inbox-row .top-line{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .inbox-row .who{font-weight:700;font-size:13.5px}
+  .inbox-row .type-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .inbox-row .type-chip.support{background:#E4EEFB;color:#2A5DAB}
+  .inbox-row .type-chip.team{background:#FBEAE6;color:var(--brand)}
+  .inbox-row .type-chip.news{background:#FCEEDB;color:#A66A12}
+  .inbox-row .preview{font-size:12.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .inbox-row .time{font-size:11px;color:var(--ink-soft)}
+
+  .inbox-open-header{font-weight:700;font-size:15px;margin-bottom:12px}
+  .inbox-open-transcript{max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
 </style>
 </head>
 <body>
@@ -204,6 +219,7 @@
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="reports">Reports</button>
+      <button class="tab-btn" data-tab="inbox">Inbox</button>
       <button class="tab-btn" data-tab="users">Users</button>
       <button class="tab-btn" data-tab="posts">Posts</button>
       <button class="tab-btn" data-tab="messages">Messages</button>
@@ -213,6 +229,17 @@
     <div class="tab-panel active" id="tab-reports">
       <div class="section-title">Pending reports <span class="count" id="reportCount">0</span></div>
       <div id="reportsList"></div>
+    </div>
+
+    <!-- INBOX TAB -->
+    <div class="tab-panel" id="tab-inbox">
+      <div class="section-title">All conversations</div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
+        <div id="inboxList" style="max-height:70vh;overflow-y:auto"></div>
+        <div id="inboxOpenConvo">
+          <div class="empty-state"><div class="icon">💬</div><div>Select a conversation to view and reply.</div></div>
+        </div>
+      </div>
     </div>
 
     <!-- USERS TAB -->
@@ -406,7 +433,117 @@
       document.getElementById("postsCount").textContent = snapshot.size;
       renderPosts(snapshot.docs);
     }));
+
+    // All conversations involving admin, for the Inbox tab
+    const inboxQuery = query(collection(db, "chats"), where("participants", "array-contains", "admin"));
+    unsubscribers.push(onSnapshot(inboxQuery, (snapshot) => {
+      const chats = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.lastMessageTime?.toMillis() || 0) - (a.lastMessageTime?.toMillis() || 0));
+      renderInbox(chats);
+    }));
   }
+
+  async function renderInbox(chats) {
+    const container = document.getElementById("inboxList");
+    if (chats.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">💬</div><div>No conversations yet.</div></div>`;
+      return;
+    }
+
+    const userCache = {};
+    async function getUserLabel(userId) {
+      if (userCache[userId]) return userCache[userId];
+      try {
+        const snap = await getDoc(doc(db, "users", userId));
+        const label = snap.exists() ? (snap.data().displayName || snap.data().name || snap.data().email || userId) : "(unknown user)";
+        userCache[userId] = label;
+        return label;
+      } catch { return userId; }
+    }
+
+    const typeFromId = (id) => {
+      if (id.startsWith("admin_team_")) return { key: "team", label: "Team", userId: id.replace("admin_team_", "") };
+      if (id.startsWith("admin_support_")) return { key: "support", label: "Support", userId: id.replace("admin_support_", "") };
+      if (id.startsWith("admin_news_")) return { key: "news", label: "News", userId: id.replace("admin_news_", "") };
+      if (id.startsWith("admin_dm_")) return { key: "support", label: "DM", userId: id.replace("admin_dm_", "") };
+      if (id.startsWith("admin_report_")) return { key: "support", label: "Report follow-up", userId: id.replace("admin_report_", "") };
+      return { key: "support", label: "Chat", userId: "" };
+    };
+
+    const rows = await Promise.all(chats.map(async (chat) => {
+      const info = typeFromId(chat.id);
+      const who = info.userId ? await getUserLabel(info.userId) : "Unknown";
+      const time = chat.lastMessageTime ? new Date(chat.lastMessageTime.toDate()).toLocaleString() : "";
+      return `
+        <div class="inbox-row" data-chatid="${chat.id}" data-userid="${info.userId}" data-typekey="${info.key}" data-who="${escapeHtml(who)}">
+          <div class="top-line">
+            <span class="who">${escapeHtml(who)}</span>
+            <span class="type-chip ${info.key}">${info.label}</span>
+          </div>
+          <div class="preview">${escapeHtml(chat.lastMessage || "")}</div>
+          <div class="time">${time}</div>
+        </div>`;
+    }));
+
+    container.innerHTML = rows.join("");
+    container.querySelectorAll(".inbox-row").forEach(row => {
+      row.addEventListener("click", () => openInboxConversation(row));
+    });
+  }
+
+  let inboxListenerUnsub = null;
+
+  function openInboxConversation(row) {
+    document.querySelectorAll(".inbox-row").forEach(r => r.classList.remove("active"));
+    row.classList.add("active");
+
+    const chatId = row.dataset.chatid;
+    const userId = row.dataset.userid;
+    const who = row.dataset.who;
+
+    if (inboxListenerUnsub) inboxListenerUnsub();
+
+    const openBox = document.getElementById("inboxOpenConvo");
+    openBox.innerHTML = `
+      <div class="inbox-open-header">${escapeHtml(who)}</div>
+      <div class="inbox-open-transcript" id="inboxTranscript">Loading...</div>
+      <textarea id="inboxReplyText" placeholder="Type your reply..." style="margin-bottom:10px"></textarea>
+      <button class="action-btn resolve" id="inboxSendBtn">Send</button>
+    `;
+
+    const messagesQuery = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "asc"), limit(50));
+    inboxListenerUnsub = onSnapshot(messagesQuery, (snapshot) => {
+      const transcript = document.getElementById("inboxTranscript");
+      if (!transcript) return;
+      if (snapshot.empty) {
+        transcript.innerHTML = `<div style="color:var(--ink-soft);font-size:13px;font-style:italic">No messages yet.</div>`;
+        return;
+      }
+      transcript.innerHTML = snapshot.docs.map(d => {
+        const msg = d.data();
+        const isFromAdmin = msg.senderId === "admin";
+        const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleString() : "";
+        return `
+          <div class="convo-line" style="${isFromAdmin ? 'background:#FBEAE6' : ''}">
+            <span class="convo-sender">${isFromAdmin ? 'You (Admin)' : escapeHtml(who)}</span>
+            <span class="convo-text">${escapeHtml(msg.text || "")}</span>
+            <span class="convo-time">${time}</span>
+          </div>`;
+      }).join("");
+      transcript.scrollTop = transcript.scrollHeight;
+    });
+
+    document.getElementById("inboxSendBtn").addEventListener("click", async () => {
+      const textArea = document.getElementById("inboxReplyText");
+      const text = textArea.value.trim();
+      if (!text) return;
+      await updateDoc(doc(db, "chats", chatId), { lastMessage: text, lastMessageTime: Timestamp.now(), lastMessageSender: "admin" });
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+      });
+      textArea.value = "";
+    });
 
   // ================= REPORTS =================
   async function renderReports(docs) {
