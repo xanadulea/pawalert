@@ -239,6 +239,12 @@
       </div>
 
       <div class="settings-card">
+        <h3>Send welcome to existing users</h3>
+        <p class="hint">Team + Support conversations only get created automatically for brand-new sign-ups. Use this to send them to everyone who joined before that existed, or anyone missing them.</p>
+        <button class="action-btn danger" id="sendWelcomeAllBtn">Send Team + Support chats to all users</button>
+      </div>
+
+      <div class="settings-card">
         <h3>Broadcast to everyone</h3>
         <p class="hint">Sends a message to every current user's "Paw Alert News" conversation. Use for real announcements only.</p>
         <textarea id="broadcastText" placeholder="What's new?"></textarea>
@@ -633,7 +639,13 @@
             }
           </div>
           <div class="message-panel" id="msg-panel-${u.id}">
-            <textarea id="msg-text-${u.id}" placeholder="Type a message to send as Paw Alert Support..."></textarea>
+            <label style="font-size:12.5px;margin-bottom:6px">Send as:</label>
+            <select id="msg-type-${u.id}" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:10px;font-family:'Inter',sans-serif">
+              <option value="support">💬 Paw Alert Support</option>
+              <option value="team">🐾 Paw Alert Team</option>
+              <option value="news">📰 Paw Alert News</option>
+            </select>
+            <textarea id="msg-text-${u.id}" placeholder="Type your message..."></textarea>
             <button class="action-btn resolve small" data-action="send-message" data-id="${u.id}">Send</button>
           </div>
         </div>`;
@@ -671,16 +683,24 @@
 
   async function sendDirectMessage(userId) {
     const textArea = document.getElementById(`msg-text-${userId}`);
+    const typeSelect = document.getElementById(`msg-type-${userId}`);
     const text = textArea.value.trim();
     if (!text) return;
 
-    const chatId = `admin_dm_${userId}`;
+    const typeConfig = {
+      support: { prefix: "admin_support_", name: "💬 Paw Alert Support" },
+      team: { prefix: "admin_team_", name: "🐾 Paw Alert Team" },
+      news: { prefix: "admin_news_", name: "📰 Paw Alert News" }
+    };
+    const chosen = typeConfig[typeSelect.value] || typeConfig.support;
+
+    const chatId = `${chosen.prefix}${userId}`;
     const chatRef = doc(db, "chats", chatId);
     const chatSnap = await getDoc(chatRef);
     if (!chatSnap.exists()) {
       await setDoc(chatRef, {
         participants: ["admin", userId],
-        animalName: "💬 Paw Alert Support",
+        animalName: chosen.name,
         animalImageUrl: "",
         lastMessage: text,
         lastMessageTime: Timestamp.now(),
@@ -695,7 +715,7 @@
     });
     textArea.value = "";
     document.getElementById(`msg-panel-${userId}`).classList.remove("show");
-    alert("Message sent.");
+    alert(`Message sent via ${chosen.name}.`);
   }
 
   document.getElementById("userSearch").addEventListener("input", (e) => {
@@ -757,6 +777,62 @@
   function defaultWelcomeText() {
     return `🐾 Welcome to Paw Alert!\n\nHey there! 👋\n\nWelcome to Paw Alert — a community of people helping lost pets find home.\n\n📸 See a lost animal? Snap a photo and post it on the map.\n📍 Found a pet? Post it so the owner can find you.\n💬 Message other users to coordinate help.\n🏡 Mark pets as found when they're reunited.\n\nYou're now part of a growing community of animal lovers.\n\nTogether, we help pets find home! 🐾\n\n— The Paw Alert Team`;
   }
+
+  document.getElementById("sendWelcomeAllBtn").addEventListener("click", async () => {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const freshUserList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const welcomeSnap = await getDoc(doc(db, "app_settings", "welcomeMessage"));
+    const teamMessage = welcomeSnap.exists() ? (welcomeSnap.data().text || defaultWelcomeText()) : defaultWelcomeText();
+    const supportMessage = `💬 Paw Alert Support\n\nNeed help? We're here for you! 👋\n\nYou can use this chat to:\n• Ask questions about using the app\n• Report issues or bugs\n• Get help with your posts\n• Share feedback\n\nJust reply to this message and we'll get back to you as soon as possible.\n\n— The Paw Alert Team`;
+
+    showConfirmModal({
+      icon: "👋", title: `Send welcome chats to all ${freshUserList.length} users?`,
+      body: "This creates the Team and Support conversations for everyone who doesn't already have them. Existing conversations won't be duplicated or overwritten.",
+      confirmLabel: "Yes, send to everyone",
+      onConfirm: async () => {
+        let sent = 0;
+        for (const u of freshUserList) {
+          const teamChatId = `admin_team_${u.id}`;
+          const teamRef = doc(db, "chats", teamChatId);
+          const teamSnap = await getDoc(teamRef);
+          if (!teamSnap.exists()) {
+            await setDoc(teamRef, {
+              participants: ["admin", u.id],
+              animalName: "🐾 Paw Alert Team",
+              animalImageUrl: "",
+              lastMessage: "Welcome to Paw Alert! 👋",
+              lastMessageTime: Timestamp.now(),
+              lastMessageSender: "admin",
+              createdAt: Timestamp.now()
+            });
+            await addDoc(collection(db, "chats", teamChatId, "messages"), {
+              text: teamMessage, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+            });
+            sent++;
+          }
+
+          const supportChatId = `admin_support_${u.id}`;
+          const supportRef = doc(db, "chats", supportChatId);
+          const supportSnap = await getDoc(supportRef);
+          if (!supportSnap.exists()) {
+            await setDoc(supportRef, {
+              participants: ["admin", u.id],
+              animalName: "💬 Paw Alert Support",
+              animalImageUrl: "",
+              lastMessage: "How can we help you? 👋",
+              lastMessageTime: Timestamp.now(),
+              lastMessageSender: "admin",
+              createdAt: Timestamp.now()
+            });
+            await addDoc(collection(db, "chats", supportChatId, "messages"), {
+              text: supportMessage, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
+            });
+          }
+        }
+        alert(`Done. Sent welcome chats to ${sent} users who didn't already have them.`);
+      }
+    });
+  });
 
   document.getElementById("saveWelcomeBtn").addEventListener("click", async () => {
     const text = document.getElementById("welcomeMessageText").value;
