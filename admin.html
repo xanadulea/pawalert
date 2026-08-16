@@ -157,6 +157,49 @@
 
   .inbox-open-header{font-weight:700;font-size:15px;margin-bottom:12px}
   .inbox-open-transcript{max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+
+  /* ---------- INBOX LAYOUT (was inline style; now responsive) ---------- */
+  .inbox-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+
+  /* ---------- FILTER CHIPS ---------- */
+  .filter-chips{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .filter-chip{border:1.5px solid var(--line);background:#fff;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink-soft);font-family:'Inter',sans-serif}
+  .filter-chip:hover{border-color:var(--ink)}
+  .filter-chip.active{border-color:var(--brand);color:var(--brand);background:#FBEAE6}
+
+  /* ---------- BROADCAST BUTTON HIERARCHY ---------- */
+  .broadcast-divider{height:1px;background:var(--line);margin:16px 0}
+  .broadcast-send-all{width:100%;padding:14px;font-size:14.5px}
+
+  /* ---------- TOASTS ---------- */
+  .toast-container{position:fixed;bottom:20px;right:20px;left:20px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;z-index:200;pointer-events:none}
+  .toast{position:relative;pointer-events:auto;background:#fff;border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:10px;padding:14px 34px 14px 16px;font-size:13.5px;box-shadow:0 8px 24px rgba(34,32,28,.14);max-width:360px;width:100%;animation:toastIn .25s ease-out}
+  .toast.success{border-left-color:var(--green)}
+  .toast.error{border-left-color:var(--brand)}
+  .toast .toast-title{font-weight:700;margin-bottom:2px}
+  .toast-close{position:absolute;top:8px;right:8px;background:none;border:none;font-size:17px;line-height:1;cursor:pointer;color:var(--ink-soft);padding:4px}
+  .toast-close:hover{color:var(--ink)}
+  @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.toast{animation:none}}
+
+  /* ---------- FOCUS VISIBILITY ---------- */
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--brand);outline-offset:2px;
+  }
+
+  /* ---------- MOBILE ---------- */
+  @media(max-width:860px){
+    .inbox-layout{grid-template-columns:1fr}
+  }
+  @media(max-width:600px){
+    header{padding:14px 16px}
+    main{padding:20px 16px 60px}
+    .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .tab-btn{flex-shrink:0}
+    .login-box{padding:32px 24px}
+    .toast-container{left:12px;right:12px;bottom:12px;align-items:stretch}
+    .toast{max-width:none}
+  }
 </style>
 </head>
 <body>
@@ -229,13 +272,19 @@
     <!-- REPORTS TAB -->
     <div class="tab-panel active" id="tab-reports">
       <div class="section-title">Pending reports <span class="count" id="reportCount">0</span></div>
+      <div class="filter-chips" id="reportFilterChips">
+        <button class="filter-chip active" data-filter="ALL" type="button">All</button>
+        <button class="filter-chip" data-filter="ANIMAL" type="button">Animal</button>
+        <button class="filter-chip" data-filter="MESSAGE" type="button">Message</button>
+        <button class="filter-chip" data-filter="USER" type="button">User</button>
+      </div>
       <div id="reportsList"></div>
     </div>
 
     <!-- INBOX TAB -->
     <div class="tab-panel" id="tab-inbox">
       <div class="section-title">All conversations</div>
-      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
+      <div class="inbox-layout">
         <div id="inboxList" style="max-height:70vh;overflow-y:auto"></div>
         <div id="inboxOpenConvo">
           <div class="empty-state"><div class="icon">💬</div><div>Select a conversation to view and reply.</div></div>
@@ -253,6 +302,14 @@
     <!-- POSTS TAB -->
     <div class="tab-panel" id="tab-posts">
       <div class="section-title">All active posts <span class="count" id="postsCount">0</span></div>
+      <div class="search-bar"><input type="text" id="postSearch" placeholder="Search by name or city..."></div>
+      <div class="filter-chips" id="postFilterChips">
+        <button class="filter-chip active" data-filter="ALL" type="button">All</button>
+        <button class="filter-chip" data-filter="LOST" type="button">Lost</button>
+        <button class="filter-chip" data-filter="FOUND" type="button">Found</button>
+        <button class="filter-chip" data-filter="URGENT" type="button">Urgent</button>
+        <button class="filter-chip" data-filter="HAPPY" type="button">Happy</button>
+      </div>
       <div id="postsList"></div>
     </div>
 
@@ -277,7 +334,8 @@
         <p class="hint">Sends a message to every current user's "Paw Alert News" conversation. Use for real announcements only.</p>
         <textarea id="broadcastText" placeholder="What's new?"></textarea>
         <button class="action-btn resolve" id="testBroadcastBtn">Send test to myself only</button>
-        <button class="action-btn danger" id="sendBroadcastBtn">Send to all users</button>
+        <div class="broadcast-divider"></div>
+        <button class="action-btn danger broadcast-send-all" id="sendBroadcastBtn">📢 Send to all users</button>
       </div>
     </div>
   </main>
@@ -295,6 +353,8 @@
     </div>
   </div>
 </div>
+
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
@@ -328,6 +388,15 @@
   let unsubscribers = [];
   let allUsersCache = [];
   let currentAdminUid = null;
+
+  // Filter/search state for Reports and Posts tabs. Docs are kept from
+  // the last snapshot so switching a filter/search re-renders instantly
+  // without waiting on a new Firestore read.
+  let lastReportDocs = [];
+  let activeReportFilter = "ALL";
+  let lastPostDocs = [];
+  let activePostFilter = "ALL";
+  let postSearchTerm = "";
 
   // ---------- TABS ----------
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -371,6 +440,30 @@
 
   document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
 
+  // ---------- REPORT FILTER CHIPS ----------
+  document.querySelectorAll("#reportFilterChips .filter-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      activeReportFilter = chip.dataset.filter;
+      document.querySelectorAll("#reportFilterChips .filter-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      applyReportFilter();
+    });
+  });
+
+  // ---------- POST FILTER CHIPS + SEARCH ----------
+  document.querySelectorAll("#postFilterChips .filter-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      activePostFilter = chip.dataset.filter;
+      document.querySelectorAll("#postFilterChips .filter-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      applyPostFilter();
+    });
+  });
+  document.getElementById("postSearch").addEventListener("input", (e) => {
+    postSearchTerm = e.target.value.toLowerCase();
+    applyPostFilter();
+  });
+
   // ---------- ACCESS CHECK + DASHBOARD LOAD ----------
   onAuthStateChanged(auth, async (user) => {
     loginBtn.disabled = false;
@@ -410,8 +503,8 @@
           return bTime - aTime;
         });
         document.getElementById("statPending").textContent = snapshot.size;
-        document.getElementById("reportCount").textContent = snapshot.size;
-        renderReports(sortedDocs);
+        lastReportDocs = sortedDocs;
+        applyReportFilter();
       },
       (error) => {
         console.error("Reports listener failed:", error);
@@ -431,8 +524,8 @@
       document.getElementById("statPosts").textContent = snapshot.size;
       const urgentCount = snapshot.docs.filter(d => d.data().type === "URGENT").length;
       document.getElementById("statUrgent").textContent = urgentCount;
-      document.getElementById("postsCount").textContent = snapshot.size;
-      renderPosts(snapshot.docs);
+      lastPostDocs = snapshot.docs;
+      applyPostFilter();
     }));
 
     // All conversations involving admin, for the Inbox tab
@@ -482,7 +575,7 @@
       const who = info.userId ? await getUserLabel(info.userId) : "Unknown";
       const time = chat.lastMessageTime ? new Date(chat.lastMessageTime.toDate()).toLocaleString() : "";
       return `
-        <div class="inbox-row" data-chatid="${escapeHtml(chat.id)}" data-userid="${escapeHtml(info.userId)}" data-typekey="${escapeHtml(info.key)}" data-who="${escapeHtml(who)}">
+        <div class="inbox-row" tabindex="0" role="button" aria-label="Open conversation with ${escapeHtml(who)}" data-chatid="${escapeHtml(chat.id)}" data-userid="${escapeHtml(info.userId)}" data-typekey="${escapeHtml(info.key)}" data-who="${escapeHtml(who)}">
           <div class="top-line">
             <span class="who">${escapeHtml(who)}</span>
             <span class="type-chip ${escapeHtml(info.key)}">${escapeHtml(info.label)}</span>
@@ -495,6 +588,12 @@
     container.innerHTML = rows.join("");
     container.querySelectorAll(".inbox-row").forEach(row => {
       row.addEventListener("click", () => openInboxConversation(row));
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openInboxConversation(row);
+        }
+      });
     });
   }
 
@@ -557,9 +656,32 @@
         textArea.value = "";
       } catch (err) {
         console.error("Failed to send:", err);
-        alert("Failed to send. Check the console for details.");
+        showToast("Check the console for details.", "error", "Failed to send");
       }
     });
+  }
+
+  function applyReportFilter() {
+    const filtered = activeReportFilter === "ALL"
+      ? lastReportDocs
+      : lastReportDocs.filter(d => (d.data().type || "ANIMAL") === activeReportFilter);
+    document.getElementById("reportCount").textContent = filtered.length;
+    renderReports(filtered);
+  }
+
+  function applyPostFilter() {
+    let filtered = lastPostDocs;
+    if (activePostFilter !== "ALL") {
+      filtered = filtered.filter(d => (d.data().type || "") === activePostFilter);
+    }
+    if (postSearchTerm) {
+      filtered = filtered.filter(d => {
+        const a = d.data();
+        return (a.name || "").toLowerCase().includes(postSearchTerm) || (a.city || "").toLowerCase().includes(postSearchTerm);
+      });
+    }
+    document.getElementById("postsCount").textContent = filtered.length;
+    renderPosts(filtered);
   }
 
   // ================= REPORTS =================
@@ -648,7 +770,7 @@
     }
 
     if (action === "ban") {
-      if (!userid) { alert("Missing user ID, can't ban."); return; }
+      if (!userid) { showToast("This report is missing a user ID, so it can't be actioned.", "error", "Can't ban"); return; }
       const info = await getDoc(doc(db, "users", userid));
       const name = info.exists() ? (info.data().displayName || info.data().name || info.data().email || userid) : userid;
       showConfirmModal({
@@ -1056,9 +1178,9 @@
           }
         }
         if (failed.length > 0) {
-          alert(`Done. Sent to ${sent} users.\n\nFailed for: ${failed.join(", ")}\n\nCheck the browser console for the specific error on each - this tells us exactly what's different about those accounts.`);
+          showToast(`Sent to ${sent} users. Failed for ${failed.length}: ${failed.join(", ")}. Check the console for details.`, "error", "Welcome chats sent with errors");
         } else {
-          alert(`Done. Sent welcome chats to ${sent} users who didn't already have them.`);
+          showToast(`Sent welcome chats to ${sent} users who didn't already have them.`, "success", "Done");
         }
       }
     });
@@ -1075,7 +1197,7 @@
   document.getElementById("testBroadcastBtn").addEventListener("click", async () => {
     const text = document.getElementById("broadcastText").value.trim();
     if (!text) return;
-    if (!currentAdminUid) { alert("Not signed in properly."); return; }
+    if (!currentAdminUid) { showToast("Not signed in properly.", "error"); return; }
 
     const chatId = `admin_news_${currentAdminUid}`;
     const chatRef = doc(db, "chats", chatId);
@@ -1091,7 +1213,7 @@
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text, senderId: "admin", timestamp: Timestamp.now(), read: false, type: "text"
     });
-    alert("Test sent - check your own account's Messages tab in the app. Nobody else received this.");
+    showToast("Check your own account's Messages tab in the app. Nobody else received this.", "success", "Test sent");
   });
 
   document.getElementById("sendBroadcastBtn").addEventListener("click", async () => {
@@ -1135,13 +1257,42 @@
         }
         document.getElementById("broadcastText").value = "";
         if (failed.length > 0) {
-          alert(`Sent to ${succeeded} of ${freshUserList.length} users.\n\nFailed for: ${failed.join(", ")}\n\nCheck the browser console for the specific error on each.`);
+          showToast(`Sent to ${succeeded} of ${freshUserList.length} users. Failed for: ${failed.join(", ")}.`, "error", "Broadcast sent with errors");
         } else {
-          alert(`Broadcast sent successfully to all ${succeeded} users.`);
+          showToast(`Broadcast sent successfully to all ${succeeded} users.`, "success", "Broadcast sent");
         }
       }
     });
   });
+
+  // Shows a dismissible toast instead of a blocking browser alert().
+  // type is "info" | "success" | "error". Auto-dismisses after 5s.
+  function showToast(message, type = "info", title = "") {
+    const container = document.getElementById("toastContainer");
+    const el = document.createElement("div");
+    el.className = `toast ${type}`;
+    el.setAttribute("role", "status");
+    el.innerHTML = `
+      <button class="toast-close" aria-label="Dismiss notification">&times;</button>
+      ${title ? `<div class="toast-title">${escapeHtml(title)}</div>` : ""}
+      <div>${escapeHtml(message)}</div>
+    `;
+    container.appendChild(el);
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let dismissed = false;
+    function dismiss() {
+      if (dismissed) return;
+      dismissed = true;
+      if (reduceMotion) { el.remove(); return; }
+      el.style.transition = "opacity .25s ease, transform .25s ease";
+      el.style.opacity = "0";
+      el.style.transform = "translateY(8px)";
+      setTimeout(() => el.remove(), 250);
+    }
+    el.querySelector(".toast-close").addEventListener("click", dismiss);
+    setTimeout(dismiss, 5000);
+  }
 
   // Proper HTML-escaping helper, safe for BOTH text-node and attribute
   // contexts. The previous version (using div.textContent -> innerHTML)
