@@ -24,29 +24,67 @@
   .nav-links a:hover{color:var(--ink)}
   .nav-cta{background:var(--ink);color:#fff;padding:11px 22px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none}
 
-  .shop-hero{padding:50px 28px 60px;max-width:1160px;margin:0 auto}
+  .shop-hero{padding:50px 28px 56px;max-width:1160px;margin:0 auto}
   .shop-hero .eyebrow{display:inline-block;background:#FBEAE6;color:var(--brand);font-weight:700;font-size:13px;padding:7px 16px;border-radius:999px;margin-bottom:20px}
   .shop-hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.6vw,50px);line-height:1.05;margin-bottom:16px;max-width:640px}
   .shop-hero p{color:var(--ink-soft);font-size:17px;max-width:480px}
 
   .products{padding:20px 28px 100px;max-width:1160px;margin:0 auto}
-  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
   @media(max-width:860px){.product-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:560px){.product-grid{grid-template-columns:1fr}}
 
-  .product-card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
-  .product-card .img{aspect-ratio:1/1;background:linear-gradient(135deg,#F4D9BC,#E7A465);display:flex;align-items:center;justify-content:center;font-size:64px}
-  .product-card:nth-child(2) .img{background:linear-gradient(135deg,#D9E8DC,#8FBF9A)}
-  .product-card:nth-child(3) .img{background:linear-gradient(135deg,#E4D9F0,#B49AD9)}
-  .product-card .body{padding:20px 22px 24px}
-  .product-card h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:6px}
-  .product-card .price{font-weight:700;font-size:16px;color:var(--ink);margin-bottom:14px}
-  .product-card p{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px}
+  .product-card{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .product-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(34,32,28,0.08)}
+  .product-card.disabled{cursor:default;opacity:0.55}
+  .product-card.disabled:hover{transform:none;box-shadow:none}
+
+  .product-card .img{aspect-ratio:1/1;background:#f2f0eb;position:relative;overflow:hidden}
+  .product-card .img img{width:100%;height:100%;object-fit:cover;display:block}
+  .soon-tag{
+    position:absolute;top:12px;right:12px;background:var(--ink);color:#fff;
+    font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;letter-spacing:.02em;
+  }
+
+  .product-card .body{padding:18px 20px 22px}
+  .product-card h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:4px}
+  .product-card .price{font-weight:700;font-size:15px;color:var(--ink-soft)}
+
+  /* Modal */
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(34,32,28,0.45);
+    align-items:center;justify-content:center;padding:24px;z-index:50;
+  }
+  .overlay.open{display:flex}
+  .modal{
+    background:var(--card);border-radius:20px;max-width:420px;width:100%;
+    overflow:hidden;position:relative;
+  }
+  .modal .img{aspect-ratio:1/1;background:#f2f0eb}
+  .modal .img img{width:100%;height:100%;object-fit:cover;display:block}
+  .modal-close{
+    position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,0.9);border:none;font-size:16px;cursor:pointer;color:var(--ink);
+  }
+  .modal .body{padding:24px 26px 28px}
+  .modal h3{font-family:'Fraunces',serif;font-size:22px;margin-bottom:6px}
+  .modal .price{font-weight:700;font-size:16px;margin-bottom:14px}
+  .modal p.desc{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px}
+
+  .size-select{
+    width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
+    font-family:'Inter',sans-serif;font-size:14.5px;margin-bottom:14px;background:#fff;color:var(--ink);
+  }
   .buy-btn{
     display:block;width:100%;text-align:center;background:var(--ink);color:#fff;
     padding:13px;border-radius:10px;font-weight:700;font-size:14.5px;text-decoration:none;
+    border:none;cursor:pointer;font-family:'Inter',sans-serif;
   }
   .buy-btn:hover{background:#000}
+  .buy-btn:disabled{opacity:0.6;cursor:default}
 
   .why{background:#22201C;color:#C9C4B8;padding:60px 28px;text-align:center}
   .why h2{font-family:'Fraunces',serif;color:#fff;font-size:clamp(24px,3.2vw,32px);margin-bottom:14px}
@@ -79,34 +117,33 @@
 <section class="products">
   <div class="product-grid">
 
-    <div class="product-card">
-      <div class="img">👕</div>
+    <div class="product-card" onclick="openModal('sweatshirt')">
+      <div class="img">
+        <img src="https://files.cdn.printful.com/files/a2b/a2b22633f200d0247915d51ef3931ac0_preview.png" alt="Paw Alert Sweatshirt">
+      </div>
       <div class="body">
-        <h3>Paw Alert Tee</h3>
-        <div class="price">$24</div>
-        <p>Soft cotton, small paw logo on the chest. Unisex sizing, S–XXL.</p>
-        <!-- Replace this href with your real Stripe Payment Link once created -->
-        <a href="#" class="buy-btn">Buy now</a>
+        <h3>Paw Alert Sweatshirt</h3>
+        <div class="price">From €40</div>
       </div>
     </div>
 
-    <div class="product-card">
-      <div class="img">👜</div>
+    <div class="product-card disabled">
+      <div class="img">
+        <span class="soon-tag">Coming soon</span>
+      </div>
       <div class="body">
         <h3>Paw Alert Tote Bag</h3>
-        <div class="price">$18</div>
-        <p>Sturdy canvas tote, big enough for treats, leashes, and everything else.</p>
-        <a href="#" class="buy-btn">Buy now</a>
+        <div class="price">—</div>
       </div>
     </div>
 
-    <div class="product-card">
-      <div class="img">🏷️</div>
+    <div class="product-card disabled">
+      <div class="img">
+        <span class="soon-tag">Coming soon</span>
+      </div>
       <div class="body">
         <h3>Sticker Pack</h3>
-        <div class="price">$6</div>
-        <p>Weatherproof sticker set - paw logo, status-color pins, and more.</p>
-        <a href="#" class="buy-btn">Buy now</a>
+        <div class="price">—</div>
       </div>
     </div>
 
@@ -119,6 +156,81 @@
 </section>
 
 <footer>© 2026 Paw Alert. All rights reserved.</footer>
+
+<!-- Buy modal -->
+<div class="overlay" id="overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="img">
+      <img src="https://files.cdn.printful.com/files/a2b/a2b22633f200d0247915d51ef3931ac0_preview.png" alt="Paw Alert Sweatshirt">
+    </div>
+    <div class="body">
+      <h3>Paw Alert Sweatshirt</h3>
+      <div class="price" id="modal-price">€40</div>
+      <p class="desc">Soft, eco-friendly unisex sweatshirt with the Paw Alert bunny on the front.</p>
+
+      <select class="size-select" id="size-select" onchange="updatePrice()">
+        <option value="paw-alert-sweatshirt-s">Size S — €40</option>
+        <option value="paw-alert-sweatshirt-m" selected>Size M — €40</option>
+        <option value="paw-alert-sweatshirt-l">Size L — €40</option>
+        <option value="paw-alert-sweatshirt-xl">Size XL — €40</option>
+        <option value="paw-alert-sweatshirt-2xl">Size 2XL — €42</option>
+      </select>
+
+      <button class="buy-btn" id="buy-button" onclick="buyProduct()">Buy now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CHECKOUT_FUNCTION_URL = "https://checkout-292939544438.europe-west1.run.app";
+
+  function openModal(product) {
+    document.getElementById('overlay').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+  }
+  function closeModalOnOverlay(e) {
+    if (e.target.id === 'overlay') closeModal();
+  }
+
+  function updatePrice() {
+    const select = document.getElementById('size-select');
+    const priceText = select.options[select.selectedIndex].text.split('—')[1].trim();
+    document.getElementById('modal-price').textContent = priceText;
+  }
+
+  async function buyProduct() {
+    const button = document.getElementById('buy-button');
+    const productId = document.getElementById('size-select').value;
+    const originalText = button.textContent;
+
+    button.textContent = "Loading...";
+    button.disabled = true;
+
+    try {
+      const res = await fetch(CHECKOUT_FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Sorry, something went wrong. Please try again.");
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    } catch (err) {
+      alert("Sorry, something went wrong. Please try again.");
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+  }
+</script>
 
 </body>
 </html>
