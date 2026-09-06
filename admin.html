@@ -54,8 +54,8 @@
   .stat-card.pending .num{color:var(--brand)}
 
   /* ---------- TABS ---------- */
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:28px}
-  .tab-btn{background:none;border:none;padding:12px 18px;font-size:14.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;border-bottom:2.5px solid transparent;font-family:'Inter',sans-serif}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab-btn{background:none;border:none;padding:12px 18px;font-size:14.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;border-bottom:2.5px solid transparent;font-family:'Inter',sans-serif;white-space:nowrap}
   .tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
   .tab-panel{display:none}
   .tab-panel.active{display:block}
@@ -66,13 +66,14 @@
   .search-bar{margin-bottom:20px}
   .search-bar input{max-width:320px}
 
-  /* ---------- REPORT CARDS ---------- */
+  /* ---------- REPORT CARDS (also used for stories) ---------- */
   .report-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
   .report-top{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:10px}
   .report-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 10px;border-radius:999px}
   .report-type.ANIMAL{background:#FBEAE6;color:var(--brand)}
   .report-type.MESSAGE{background:#E4EEFB;color:#2A5DAB}
   .report-type.USER{background:#FCEEDB;color:#A66A12}
+  .report-type.STORY{background:#E4F4E9;color:#2E9E5B}
   .report-time{font-size:12.5px;color:var(--ink-soft)}
   .report-body{font-size:14.5px;margin-bottom:6px}
   .report-body strong{color:var(--ink)}
@@ -158,7 +159,7 @@
   .inbox-open-header{font-weight:700;font-size:15px;margin-bottom:12px}
   .inbox-open-transcript{max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
 
-  /* ---------- INBOX LAYOUT (was inline style; now responsive) ---------- */
+  /* ---------- INBOX LAYOUT ---------- */
   .inbox-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
 
   /* ---------- FILTER CHIPS ---------- */
@@ -266,6 +267,7 @@
       <button class="tab-btn" data-tab="inbox">Inbox</button>
       <button class="tab-btn" data-tab="users">Users</button>
       <button class="tab-btn" data-tab="posts">Posts</button>
+      <button class="tab-btn" data-tab="stories">Stories</button>
       <button class="tab-btn" data-tab="messages">Messages</button>
     </div>
 
@@ -311,6 +313,21 @@
         <button class="filter-chip" data-filter="HAPPY" type="button">Happy</button>
       </div>
       <div id="postsList"></div>
+    </div>
+
+    <!-- STORIES TAB -->
+    <div class="tab-panel" id="tab-stories">
+      <div class="section-title">
+        Stories <span class="count" id="storyCount">0</span>
+        <span style="font-size:13px;font-weight:400;color:var(--ink-soft);font-family:'Inter',sans-serif;margin-left:4px">(pending)</span>
+      </div>
+      <div class="filter-chips" id="storyFilterChips">
+        <button class="filter-chip active" data-filter="ALL" type="button">All</button>
+        <button class="filter-chip" data-filter="PENDING" type="button">Pending</button>
+        <button class="filter-chip" data-filter="APPROVED" type="button">Approved</button>
+        <button class="filter-chip" data-filter="REJECTED" type="button">Rejected</button>
+      </div>
+      <div id="storiesList"></div>
     </div>
 
     <!-- MESSAGES TAB -->
@@ -389,14 +406,14 @@
   let allUsersCache = [];
   let currentAdminUid = null;
 
-  // Filter/search state for Reports and Posts tabs. Docs are kept from
-  // the last snapshot so switching a filter/search re-renders instantly
-  // without waiting on a new Firestore read.
+  // Filter/search state
   let lastReportDocs = [];
   let activeReportFilter = "ALL";
   let lastPostDocs = [];
   let activePostFilter = "ALL";
   let postSearchTerm = "";
+  let lastStoryDocs = [];
+  let activeStoryFilter = "ALL";
 
   // ---------- TABS ----------
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -464,6 +481,16 @@
     applyPostFilter();
   });
 
+  // ---------- STORY FILTER CHIPS ----------
+  document.querySelectorAll("#storyFilterChips .filter-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      activeStoryFilter = chip.dataset.filter;
+      document.querySelectorAll("#storyFilterChips .filter-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      applyStoryFilter();
+    });
+  });
+
   // ---------- ACCESS CHECK + DASHBOARD LOAD ----------
   onAuthStateChanged(auth, async (user) => {
     loginBtn.disabled = false;
@@ -528,7 +555,7 @@
       applyPostFilter();
     }));
 
-    // All conversations involving admin, for the Inbox tab
+    // Inbox
     const inboxQuery = query(collection(db, "chats"), where("participants", "array-contains", "admin"));
     unsubscribers.push(onSnapshot(inboxQuery, (snapshot) => {
       const chats = snapshot.docs
@@ -536,8 +563,23 @@
         .sort((a, b) => (b.lastMessageTime?.toMillis() || 0) - (a.lastMessageTime?.toMillis() || 0));
       renderInbox(chats);
     }));
+
+    // STORIES: listen to all stories
+    const storiesQuery = query(collection(db, "stories"));
+    unsubscribers.push(onSnapshot(storiesQuery, (snapshot) => {
+      const sortedDocs = [...snapshot.docs].sort((a, b) => {
+        const aTime = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+        const bTime = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+        return bTime - aTime;
+      });
+      lastStoryDocs = sortedDocs;
+      const pendingCount = sortedDocs.filter(d => d.data().status === "PENDING").length;
+      document.getElementById("storyCount").textContent = pendingCount;
+      applyStoryFilter();
+    }));
   }
 
+  // ================= INBOX =================
   async function renderInbox(chats) {
     const container = document.getElementById("inboxList");
     if (chats.length === 0) {
@@ -556,11 +598,6 @@
       } catch { return userId; }
     }
 
-    // NOTE: chat.id is a Firestore document ID. These are usually
-    // generated by trusted app code, but a determined attacker calling
-    // Firestore directly (bypassing the app) could pick an arbitrary ID
-    // as long as their own uid is in `participants`. Always escape it
-    // before it goes into HTML - never trust a document ID as "safe" text.
     const typeFromId = (id) => {
       if (id.startsWith("admin_team_")) return { key: "team", label: "Team", userId: id.replace("admin_team_", "") };
       if (id.startsWith("admin_support_")) return { key: "support", label: "Support", userId: id.replace("admin_support_", "") };
@@ -661,6 +698,7 @@
     });
   }
 
+  // ================= REPORTS =================
   function applyReportFilter() {
     const filtered = activeReportFilter === "ALL"
       ? lastReportDocs
@@ -669,22 +707,6 @@
     renderReports(filtered);
   }
 
-  function applyPostFilter() {
-    let filtered = lastPostDocs;
-    if (activePostFilter !== "ALL") {
-      filtered = filtered.filter(d => (d.data().type || "") === activePostFilter);
-    }
-    if (postSearchTerm) {
-      filtered = filtered.filter(d => {
-        const a = d.data();
-        return (a.name || "").toLowerCase().includes(postSearchTerm) || (a.city || "").toLowerCase().includes(postSearchTerm);
-      });
-    }
-    document.getElementById("postsCount").textContent = filtered.length;
-    renderPosts(filtered);
-  }
-
-  // ================= REPORTS =================
   async function renderReports(docs) {
     const container = document.getElementById("reportsList");
     if (docs.length === 0) {
@@ -1071,6 +1093,21 @@
   // ================= POSTS =================
   const statusColors = { LOST: "#D64B3B", FOUND: "#2E9E5B", URGENT: "#8355E0", HAPPY: "#E0A22E" };
 
+  function applyPostFilter() {
+    let filtered = lastPostDocs;
+    if (activePostFilter !== "ALL") {
+      filtered = filtered.filter(d => (d.data().type || "") === activePostFilter);
+    }
+    if (postSearchTerm) {
+      filtered = filtered.filter(d => {
+        const a = d.data();
+        return (a.name || "").toLowerCase().includes(postSearchTerm) || (a.city || "").toLowerCase().includes(postSearchTerm);
+      });
+    }
+    document.getElementById("postsCount").textContent = filtered.length;
+    renderPosts(filtered);
+  }
+
   function renderPosts(docs) {
     const container = document.getElementById("postsList");
     if (docs.length === 0) {
@@ -1100,6 +1137,135 @@
           body: "This permanently removes the post from the map and browse screens. This cannot be undone.",
           confirmLabel: "Yes, delete",
           onConfirm: async () => { await deleteDoc(doc(db, "animals", btn.dataset.id)); }
+        });
+      });
+    });
+  }
+
+  // ================= STORIES =================
+  function applyStoryFilter() {
+    let filtered = lastStoryDocs;
+    if (activeStoryFilter !== "ALL") {
+      filtered = filtered.filter(d => (d.data().status || "PENDING") === activeStoryFilter);
+    }
+    renderStories(filtered);
+  }
+
+  function renderStories(docs) {
+    const container = document.getElementById("storiesList");
+    if (docs.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">📝</div><div>No stories yet.</div></div>`;
+      return;
+    }
+
+    container.innerHTML = docs.map(d => {
+      const s = d.data();
+      const status = s.status || "PENDING";
+      const statusColor = status === 'PENDING' ? '#D64B3B' : status === 'APPROVED' ? '#2E9E5B' : '#6B6559';
+      const time = s.timestamp ? new Date(s.timestamp.toDate()).toLocaleString() : '';
+      
+      return `
+        <div class="report-card" style="border-left:4px solid ${statusColor}">
+          <div class="report-top">
+            <span class="report-type STORY" style="background:${statusColor}22;color:${statusColor}">${status}</span>
+            <span class="report-time">${time}</span>
+          </div>
+          <div class="report-body"><strong>${escapeHtml(s.title || 'Untitled')}</strong></div>
+          <div class="report-meta">By ${escapeHtml(s.authorName || 'Anonymous')} · ${escapeHtml(s.authorEmail || '')}</div>
+          <div style="background:#FAF9F6;padding:12px;border-radius:8px;margin-bottom:14px;font-size:14px;max-height:120px;overflow-y:auto">
+            ${escapeHtml(s.content || '')}
+          </div>
+          ${s.photoUrl ? `<img src="${s.photoUrl}" style="max-width:120px;border-radius:8px;margin-bottom:14px;object-fit:cover" />` : ''}
+          <div class="report-actions">
+            ${status === 'PENDING' ? `
+              <button class="action-btn resolve" data-action="approve-story" data-id="${d.id}">✅ Approve & Publish</button>
+              <button class="action-btn danger" data-action="reject-story" data-id="${d.id}">❌ Reject</button>
+            ` : `
+              <span style="font-size:13px;color:var(--ink-soft)">${status === 'APPROVED' ? '✅ Published' : '❌ Rejected'}</span>
+              ${status === 'APPROVED' ? `<button class="action-btn small danger" data-action="unpublish-story" data-id="${d.id}">Unpublish</button>` : ''}
+            `}
+            <button class="action-btn small" data-action="delete-story" data-id="${d.id}">🗑️ Delete</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    // Event listeners for story actions
+    container.querySelectorAll("[data-action='approve-story']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const storyId = btn.dataset.id;
+        try {
+          const storySnap = await getDoc(doc(db, "stories", storyId));
+          if (!storySnap.exists()) {
+            showToast("Story not found.", "error", "Error");
+            return;
+          }
+          const story = storySnap.data();
+          
+          // Update story status
+          await updateDoc(doc(db, "stories", storyId), { 
+            status: "APPROVED", 
+            approvedAt: Timestamp.now() 
+          });
+          
+          // Create a blog post from it
+          await addDoc(collection(db, "blog_posts"), {
+            title: story.title || "A Paw Alert Story",
+            content: story.content || "",
+            author: story.authorName || "Anonymous",
+            authorId: story.userId || "anonymous",
+            imageUrl: story.photoUrl || "",
+            category: "Community Story",
+            createdAt: Timestamp.now(),
+            published: true,
+            source: "story",
+            sourceId: storyId,
+            storyAuthorEmail: story.authorEmail || ""
+          });
+          
+          showToast("Story approved and published to the blog!", "success", "Published");
+        } catch (err) {
+          console.error("Failed to approve story:", err);
+          showToast("Something went wrong. Check console.", "error", "Error");
+        }
+      });
+    });
+
+    container.querySelectorAll("[data-action='reject-story']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try {
+          await updateDoc(doc(db, "stories", btn.dataset.id), { status: "REJECTED" });
+          showToast("Story rejected.", "info", "Done");
+        } catch (err) {
+          showToast("Something went wrong.", "error", "Error");
+        }
+      });
+    });
+
+    container.querySelectorAll("[data-action='unpublish-story']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try {
+          await updateDoc(doc(db, "stories", btn.dataset.id), { status: "PENDING" });
+          showToast("Story unpublished (moved back to pending).", "info", "Done");
+        } catch (err) {
+          showToast("Something went wrong.", "error", "Error");
+        }
+      });
+    });
+
+    container.querySelectorAll("[data-action='delete-story']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        showConfirmModal({
+          icon: "🗑️", title: "Delete this story?",
+          body: "This permanently removes the story. This cannot be undone.",
+          confirmLabel: "Yes, delete",
+          onConfirm: async () => {
+            try {
+              await deleteDoc(doc(db, "stories", btn.dataset.id));
+              showToast("Story deleted.", "info", "Done");
+            } catch (err) {
+              showToast("Something went wrong.", "error", "Error");
+            }
+          }
         });
       });
     });
@@ -1220,9 +1386,6 @@
     const text = document.getElementById("broadcastText").value.trim();
     if (!text) return;
 
-    // Fetch a fresh, complete list right now - not the background
-    // cached list, which might not have finished loading everyone
-    // yet if this is clicked soon after the page opens
     const usersSnap = await getDocs(collection(db, "users"));
     const freshUserList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -1265,8 +1428,7 @@
     });
   });
 
-  // Shows a dismissible toast instead of a blocking browser alert().
-  // type is "info" | "success" | "error". Auto-dismisses after 5s.
+  // ================= TOASTS & HELPERS =================
   function showToast(message, type = "info", title = "") {
     const container = document.getElementById("toastContainer");
     const el = document.createElement("div");
@@ -1294,12 +1456,6 @@
     setTimeout(dismiss, 5000);
   }
 
-  // Proper HTML-escaping helper, safe for BOTH text-node and attribute
-  // contexts. The previous version (using div.textContent -> innerHTML)
-  // left quote characters ( " and ' ) unescaped, which is fine inside a
-  // text node but unsafe inside an attribute like data-name="...". Since
-  // this function is used to build attributes throughout the file, it
-  // must encode quotes too.
   function escapeHtml(str) {
     return String(str ?? "")
       .replace(/&/g, "&amp;")
@@ -1309,9 +1465,6 @@
       .replace(/'/g, "&#39;");
   }
 
-  // Only treat a URL as safe to use in src/href if it's actually
-  // http(s). Blocks javascript:, data:, and other schemes that could
-  // execute when clicked or loaded, even after HTML-escaping.
   function isSafeUrl(url) {
     if (!url || typeof url !== "string") return false;
     return /^https?:\/\//i.test(url.trim());
