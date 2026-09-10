@@ -62,7 +62,7 @@
 
   .section-title{font-family:'Fraunces',serif;font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
   .section-title .count{background:var(--brand);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;font-family:'Inter',sans-serif}
-  #shelterPendingBadge:not(:empty){background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
+  #shelterPendingBadge:not(:empty), #inboxUnreadBadge:not(:empty){background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
 
   .search-bar{margin-bottom:20px}
   .search-bar input{max-width:320px}
@@ -140,6 +140,26 @@
   .modal-icon{font-size:36px;margin-bottom:12px}
   .modal-box h2{font-family:'Fraunces',serif;font-size:22px;margin-bottom:12px}
   .modal-box p{color:var(--ink-soft);font-size:14.5px;margin-bottom:26px;line-height:1.6}
+
+  /* ---------- DETAIL VIEW MODAL ---------- */
+  .detail-modal-box{max-width:520px;text-align:left;position:relative;max-height:85vh;overflow-y:auto;padding:36px 32px 28px}
+  .detail-modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-soft);padding:6px}
+  .detail-modal-close:hover{color:var(--ink)}
+  .detail-photo{width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:18px;background:#F5F3EF}
+  .detail-photo.placeholder{display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:13px;height:160px}
+  .detail-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .detail-row:last-child{border-bottom:none}
+  .detail-row .label{color:var(--ink-soft);flex-shrink:0;width:110px;font-weight:600}
+  .detail-row .value{color:var(--ink);word-break:break-word}
+  .detail-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-bottom:4px}
+  .detail-subtitle{color:var(--ink-soft);font-size:13px;margin-bottom:18px}
+
+  /* ---------- UNREAD INBOX INDICATORS ---------- */
+  .inbox-row.unread{border-color:var(--brand);background:#FBEAE6}
+  .inbox-row .unread-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--brand);margin-left:6px;flex-shrink:0}
+  .inbox-row .who{display:flex;align-items:center}
+  .user-link{color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline}
+  .user-link:hover{opacity:.8}
   .modal-actions{display:flex;gap:12px;justify-content:center}
   .modal-actions .action-btn{padding:11px 22px}
   .modal-actions .danger:disabled{opacity:.5;cursor:not-allowed}
@@ -265,7 +285,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="reports">Reports</button>
       <button class="tab-btn" data-tab="shelters">Shelters <span id="shelterPendingBadge"></span></button>
-      <button class="tab-btn" data-tab="inbox">Inbox</button>
+      <button class="tab-btn" data-tab="inbox">Inbox <span id="inboxUnreadBadge"></span></button>
       <button class="tab-btn" data-tab="users">Users</button>
       <button class="tab-btn" data-tab="posts">Posts</button>
       <button class="tab-btn" data-tab="messages">Messages</button>
@@ -359,6 +379,14 @@
       <button class="action-btn" id="modalCancel">Cancel</button>
       <button class="action-btn danger" id="modalConfirm" disabled>Confirm (3)</button>
     </div>
+  </div>
+</div>
+
+<!-- DETAIL VIEW MODAL - for viewing posts, user info, etc. (no confirm/danger action, just a close) -->
+<div id="detailModal" class="modal-overlay">
+  <div class="modal-box detail-modal-box">
+    <button class="detail-modal-close" id="detailModalClose" aria-label="Close">&times;</button>
+    <div id="detailModalContent"></div>
   </div>
 </div>
 
@@ -559,7 +587,18 @@
     unsubscribers.push(onSnapshot(inboxQuery, (snapshot) => {
       const chats = snapshot.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.lastMessageTime?.toMillis() || 0) - (a.lastMessageTime?.toMillis() || 0));
+        .sort((a, b) => {
+          // Unread (last message wasn't from admin) floats to the top,
+          // so a new message never gets buried under old read ones
+          const aUnread = a.lastMessageSender && a.lastMessageSender !== "admin";
+          const bUnread = b.lastMessageSender && b.lastMessageSender !== "admin";
+          if (aUnread !== bUnread) return aUnread ? -1 : 1;
+          return (b.lastMessageTime?.toMillis() || 0) - (a.lastMessageTime?.toMillis() || 0);
+        });
+
+      const unreadCount = chats.filter(c => c.lastMessageSender && c.lastMessageSender !== "admin").length;
+      document.getElementById("inboxUnreadBadge").textContent = unreadCount > 0 ? unreadCount : "";
+
       renderInbox(chats);
     }));
   }
@@ -600,10 +639,11 @@
       const info = typeFromId(chat.id);
       const who = info.userId ? await getUserLabel(info.userId) : "Unknown";
       const time = chat.lastMessageTime ? new Date(chat.lastMessageTime.toDate()).toLocaleString() : "";
+      const isUnread = chat.lastMessageSender && chat.lastMessageSender !== "admin";
       return `
-        <div class="inbox-row" tabindex="0" role="button" aria-label="Open conversation with ${escapeHtml(who)}" data-chatid="${escapeHtml(chat.id)}" data-userid="${escapeHtml(info.userId)}" data-typekey="${escapeHtml(info.key)}" data-who="${escapeHtml(who)}">
+        <div class="inbox-row${isUnread ? ' unread' : ''}" tabindex="0" role="button" aria-label="Open conversation with ${escapeHtml(who)}" data-chatid="${escapeHtml(chat.id)}" data-userid="${escapeHtml(info.userId)}" data-typekey="${escapeHtml(info.key)}" data-who="${escapeHtml(who)}">
           <div class="top-line">
-            <span class="who">${escapeHtml(who)}</span>
+            <span class="who">${escapeHtml(who)}${isUnread ? '<span class="unread-dot"></span>' : ''}</span>
             <span class="type-chip ${escapeHtml(info.key)}">${escapeHtml(info.label)}</span>
           </div>
           <div class="preview">${escapeHtml(chat.lastMessage || "")}</div>
@@ -743,13 +783,13 @@
         const reporter = await getUserInfo(r.reporterID);
         const sender = await getUserInfo(r.reportedUserId);
         bodyHtml = `<strong>Reported message:</strong> "${escapeHtml(r.reportedMessageText || "")}"`;
-        meta = `Reporter: ${reporter ? `${escapeHtml(reporter.name)} (${escapeHtml(reporter.email)})` : "unknown"} &nbsp;•&nbsp; Sender: ${sender ? `${escapeHtml(sender.name)} (${escapeHtml(sender.email)})` : "unknown"}`;
+        meta = `Reporter: ${reporter ? `<span class="user-link" data-userid="${escapeHtml(r.reporterID || "")}">${escapeHtml(reporter.name)} (${escapeHtml(reporter.email)})</span>` : "unknown"} &nbsp;•&nbsp; Sender: ${sender ? `<span class="user-link" data-userid="${escapeHtml(r.reportedUserId || "")}">${escapeHtml(sender.name)} (${escapeHtml(sender.email)})</span>` : "unknown"}`;
         evidenceHtml = await buildConversationContext(r.chatId, r.reportedMessageId);
       } else if (type === "USER") {
         const reporter = await getUserInfo(r.reporterID);
         const reported = await getUserInfo(r.reportedUserId);
         bodyHtml = `<strong>User account reported</strong> — <em>Reason given: "${escapeHtml(r.reason || "No reason provided")}"</em>`;
-        meta = `Reporter: ${reporter ? `${escapeHtml(reporter.name)} (${escapeHtml(reporter.email)})` : "unknown"} &nbsp;•&nbsp; Reported: ${reported ? `${escapeHtml(reported.name)} (${escapeHtml(reported.email)})` : "unknown"}`;
+        meta = `Reporter: ${reporter ? `<span class="user-link" data-userid="${escapeHtml(r.reporterID || "")}">${escapeHtml(reporter.name)} (${escapeHtml(reporter.email)})</span>` : "unknown"} &nbsp;•&nbsp; Reported: ${reported ? `<span class="user-link" data-userid="${escapeHtml(r.reportedUserId || "")}">${escapeHtml(reported.name)} (${escapeHtml(reported.email)})</span>` : "unknown"}`;
       } else {
         bodyHtml = `<strong>${escapeHtml(r.animalName || "Untitled post")}</strong> — <em>Reason given: "${escapeHtml(r.reason || "No reason given")}"</em>`;
         meta = `Reported by: ${escapeHtml(r.reportedByEmail || r.reportedBy || "unknown")}`;
@@ -779,6 +819,9 @@
     container.innerHTML = cardsHtml.join("");
     container.querySelectorAll("[data-action]").forEach(btn => {
       btn.addEventListener("click", () => handleReportAction(btn.dataset));
+    });
+    container.querySelectorAll(".user-link").forEach(el => {
+      el.addEventListener("click", () => showUserDetail(el.dataset.userid));
     });
   }
 
@@ -939,6 +982,77 @@
     function handleCancel() { cleanup(); }
     confirmBtn.addEventListener("click", handleConfirm);
     cancelBtn.addEventListener("click", handleCancel);
+  }
+
+  // Simple detail viewer - for "let me actually look at this post/user"
+  // moments, as opposed to showConfirmModal which is for yes/no actions.
+  function showDetailModal(html) {
+    document.getElementById("detailModalContent").innerHTML = html;
+    document.getElementById("detailModal").classList.add("show");
+  }
+  document.getElementById("detailModalClose").addEventListener("click", () => {
+    document.getElementById("detailModal").classList.remove("show");
+  });
+  document.getElementById("detailModal").addEventListener("click", (e) => {
+    if (e.target.id === "detailModal") {
+      document.getElementById("detailModal").classList.remove("show");
+    }
+  });
+
+  async function showPostDetail(animalId) {
+    if (!animalId) { showToast("No post reference available.", "error"); return; }
+    try {
+      const snap = await getDoc(doc(db, "animals", animalId));
+      if (!snap.exists()) {
+        showDetailModal(`<div class="detail-title">Post not found</div><div class="detail-subtitle">This post may have already been deleted.</div>`);
+        return;
+      }
+      const a = snap.data();
+      const rawPhoto = a.imageUrl || (a.photoUrls && a.photoUrls[0]) || "";
+      const photo = isSafeUrl(rawPhoto) ? escapeHtml(rawPhoto) : "";
+      const posted = a.timestamp ? new Date(a.timestamp.toDate()).toLocaleString() : "Unknown";
+      const expires = a.expiresAt ? new Date(a.expiresAt.toDate()).toLocaleString() : "Unknown";
+
+      showDetailModal(`
+        ${photo ? `<img src="${photo}" class="detail-photo" />` : `<div class="detail-photo placeholder">No photo</div>`}
+        <div class="detail-title">${escapeHtml(a.name || "Unnamed")}</div>
+        <div class="detail-subtitle">${escapeHtml(a.type || "")} &middot; ${escapeHtml(a.animalType || "")}</div>
+        <div class="detail-row"><span class="label">Description</span><span class="value">${escapeHtml(a.description || "None")}</span></div>
+        <div class="detail-row"><span class="label">Location</span><span class="value">${escapeHtml(a.city || "Unknown")}</span></div>
+        <div class="detail-row"><span class="label">Posted</span><span class="value">${escapeHtml(posted)}</span></div>
+        <div class="detail-row"><span class="label">Expires</span><span class="value">${escapeHtml(expires)}</span></div>
+      `);
+    } catch (err) {
+      console.error(err);
+      showToast("Couldn't load this post.", "error");
+    }
+  }
+
+  async function showUserDetail(userId) {
+    if (!userId || userId === "admin") { showToast("No user reference available.", "error"); return; }
+    try {
+      const snap = await getDoc(doc(db, "users", userId));
+      if (!snap.exists()) {
+        showDetailModal(`<div class="detail-title">User not found</div><div class="detail-subtitle">This account may have been deleted.</div>`);
+        return;
+      }
+      const u = snap.data();
+      const name = u.displayName || u.name || "(no name set)";
+      const joined = u.joinDate ? new Date(u.joinDate.toDate()).toLocaleDateString() : "Unknown";
+      const banned = u.banned === true;
+      const verified = u.verified === true;
+
+      showDetailModal(`
+        <div class="detail-title">${escapeHtml(name)}</div>
+        <div class="detail-subtitle">${escapeHtml(u.email || "No email on file")}</div>
+        <div class="detail-row"><span class="label">Joined</span><span class="value">${escapeHtml(joined)}</span></div>
+        <div class="detail-row"><span class="label">Account type</span><span class="value">${escapeHtml(u.accountType || "Individual")}</span></div>
+        <div class="detail-row"><span class="label">Status</span><span class="value">${banned ? "🚫 Banned" : "✅ Active"}${verified ? " &middot; Verified shelter" : ""}</span></div>
+      `);
+    } catch (err) {
+      console.error(err);
+      showToast("Couldn't load this user.", "error");
+    }
   }
 
   async function buildAnimalEvidence(animalId) {
@@ -1178,7 +1292,7 @@
       const photo = isSafeUrl(rawPhoto) ? escapeHtml(rawPhoto) : "";
       const color = statusColors[a.type] || "#999";
       return `
-        <div class="post-row">
+        <div class="post-row" data-view-id="${escapeHtml(d.id)}" style="cursor:pointer">
           ${photo ? `<img src="${photo}" />` : `<div class="no-photo"></div>`}
           <div class="info">
             <div class="name"><span class="post-dot" style="background:${color}"></span>${escapeHtml(a.name || "Unnamed")} · ${escapeHtml(a.type || "")}</div>
@@ -1187,6 +1301,14 @@
           <button class="action-btn small danger" data-action="delete-post-direct" data-id="${escapeHtml(d.id)}" data-name="${escapeHtml(a.name || "this post")}">Delete</button>
         </div>`;
     }).join("");
+
+    container.querySelectorAll("[data-view-id]").forEach(row => {
+      row.addEventListener("click", (e) => {
+        // Don't open the viewer if the click was actually on the Delete button
+        if (e.target.closest("[data-action='delete-post-direct']")) return;
+        showPostDetail(row.dataset.viewId);
+      });
+    });
 
     container.querySelectorAll("[data-action='delete-post-direct']").forEach(btn => {
       btn.addEventListener("click", () => {
