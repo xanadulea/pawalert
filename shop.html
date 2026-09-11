@@ -1,236 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shop — Paw Alert</title>
-<meta name="description" content="Paw Alert merch - support the app that helps lost pets find home.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#FBF9F6; --card:#ffffff; --ink:#22201C; --ink-soft:#6B6559;
-    --line:#E7E2D8; --brand:#D64B3B;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.5}
-  .serif{font-family:'Fraunces',serif}
-  nav{display:flex;align-items:center;justify-content:space-between;padding:26px 28px;max-width:1160px;margin:0 auto}
-  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
-  .brand-mark{width:36px;height:36px;background:var(--brand);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px}
-  .brand-name{font-family:'Fraunces',serif;font-weight:700;font-size:20px}
-  .nav-links{display:flex;align-items:center;gap:30px}
-  .nav-links a{color:var(--ink-soft);text-decoration:none;font-weight:600;font-size:15px}
-  .nav-links a:hover{color:var(--ink)}
-  .nav-cta{background:var(--ink);color:#fff;padding:11px 22px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop — PawAlert</title>
 
-  .shop-hero{padding:50px 28px 56px;max-width:1160px;margin:0 auto}
-  .shop-hero .eyebrow{display:inline-block;background:#FBEAE6;color:var(--brand);font-weight:700;font-size:13px;padding:7px 16px;border-radius:999px;margin-bottom:20px}
-  .shop-hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.6vw,50px);line-height:1.05;margin-bottom:16px;max-width:640px}
-  .shop-hero p{color:var(--ink-soft);font-size:17px;max-width:480px}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
 
-  .products{padding:20px 28px 100px;max-width:1160px;margin:0 auto}
-  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-  @media(max-width:860px){.product-grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.product-grid{grid-template-columns:1fr}}
+    <style>
+        /* Shop-specific additions only — everything else inherits css/style.css */
+        .shop-hero-inner{max-width:700px}
+        .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+        @media(max-width:860px){.product-grid{grid-template-columns:1fr 1fr}}
+        @media(max-width:560px){.product-grid{grid-template-columns:1fr}}
 
-  .product-card{
-    background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;
-    cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .product-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(34,32,28,0.08)}
-  .product-card.disabled{cursor:default;opacity:0.55}
-  .product-card.disabled:hover{transform:none;box-shadow:none}
+        .product-card{
+            background:#fff;border-radius:16px;overflow:hidden;cursor:pointer;
+            box-shadow:0 2px 10px rgba(0,0,0,0.05);transition:transform .15s ease, box-shadow .15s ease;
+        }
+        .product-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.1)}
+        .product-card.disabled{cursor:default;opacity:0.55}
+        .product-card.disabled:hover{transform:none;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
 
-  .product-card .img{aspect-ratio:1/1;background:#f2f0eb;position:relative;overflow:hidden}
-  .product-card .img img{width:100%;height:100%;object-fit:cover;display:block}
-  .soon-tag{
-    position:absolute;top:12px;right:12px;background:var(--ink);color:#fff;
-    font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;letter-spacing:.02em;
-  }
+        .product-card .img{aspect-ratio:1/1;background:#f2f0eb;position:relative;overflow:hidden}
+        .product-card .img img{width:100%;height:100%;object-fit:cover;display:block}
+        .soon-tag{
+            position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.75);color:#fff;
+            font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;
+        }
+        .product-card .body{padding:18px 20px 22px}
+        .product-card h3{font-size:18px;margin-bottom:4px}
+        .product-card .price{font-weight:800;font-size:15px;color:var(--primary-orange,#FF7A45)}
 
-  .product-card .body{padding:18px 20px 22px}
-  .product-card h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:4px}
-  .product-card .price{font-weight:700;font-size:15px;color:var(--ink-soft)}
+        .overlay{
+            display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
+            align-items:center;justify-content:center;padding:24px;z-index:999;
+        }
+        .overlay.open{display:flex}
+        .modal{background:#fff;border-radius:20px;max-width:420px;width:100%;overflow:hidden;position:relative}
+        .modal .img{aspect-ratio:1/1;background:#f2f0eb}
+        .modal .img img{width:100%;height:100%;object-fit:cover;display:block}
+        .modal-close{
+            position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;
+            background:rgba(255,255,255,0.9);border:none;font-size:16px;cursor:pointer;
+        }
+        .modal .body{padding:24px 26px 28px}
+        .modal h3{font-size:22px;margin-bottom:6px}
+        .modal .price{font-weight:800;font-size:16px;margin-bottom:14px;color:var(--primary-orange,#FF7A45)}
+        .modal p.desc{font-size:13.5px;color:#666;margin-bottom:18px}
 
-  /* Modal */
-  .overlay{
-    display:none;position:fixed;inset:0;background:rgba(34,32,28,0.45);
-    align-items:center;justify-content:center;padding:24px;z-index:50;
-  }
-  .overlay.open{display:flex}
-  .modal{
-    background:var(--card);border-radius:20px;max-width:420px;width:100%;
-    overflow:hidden;position:relative;
-  }
-  .modal .img{aspect-ratio:1/1;background:#f2f0eb}
-  .modal .img img{width:100%;height:100%;object-fit:cover;display:block}
-  .modal-close{
-    position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;
-    background:rgba(255,255,255,0.9);border:none;font-size:16px;cursor:pointer;color:var(--ink);
-  }
-  .modal .body{padding:24px 26px 28px}
-  .modal h3{font-family:'Fraunces',serif;font-size:22px;margin-bottom:6px}
-  .modal .price{font-weight:700;font-size:16px;margin-bottom:14px}
-  .modal p.desc{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px}
-
-  .size-select{
-    width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
-    font-family:'Inter',sans-serif;font-size:14.5px;margin-bottom:14px;background:#fff;color:var(--ink);
-  }
-  .buy-btn{
-    display:block;width:100%;text-align:center;background:var(--ink);color:#fff;
-    padding:13px;border-radius:10px;font-weight:700;font-size:14.5px;text-decoration:none;
-    border:none;cursor:pointer;font-family:'Inter',sans-serif;
-  }
-  .buy-btn:hover{background:#000}
-  .buy-btn:disabled{opacity:0.6;cursor:default}
-
-  .why{background:#22201C;color:#C9C4B8;padding:60px 28px;text-align:center}
-  .why h2{font-family:'Fraunces',serif;color:#fff;font-size:clamp(24px,3.2vw,32px);margin-bottom:14px}
-  .why p{max-width:520px;margin:0 auto;font-size:15.5px}
-
-  footer{padding:40px 28px;text-align:center;color:var(--ink-soft);font-size:13px}
-</style>
+        .size-select{
+            width:100%;padding:12px 14px;border-radius:10px;border:1px solid #ddd;
+            font-family:'Nunito',sans-serif;font-size:14.5px;margin-bottom:14px;background:#fff;
+        }
+        .buy-btn-full{width:100%;justify-content:center}
+        .buy-btn-full:disabled{opacity:0.6;cursor:default}
+    </style>
 </head>
 <body>
 
-<nav>
-  <a href="index.html" class="brand">
-    <span class="brand-mark">🐾</span>
-    <span class="brand-name">Paw Alert</span>
-  </a>
-  <div class="nav-links">
-    <a href="index.html#stories">Stories</a>
-    <a href="shop.html">Shop</a>
-    <a href="contact.html">Contact</a>
-    <a href="https://play.google.com/store/apps/details?id=com.yourname.pawmatch" class="nav-cta" target="_blank" rel="noopener noreferrer">Get the app</a>
-  </div>
-</nav>
+    <!-- ========== HEADER (matches site) ========== -->
+    <header class="header">
+        <div class="container">
+            <div class="nav">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-paw"></i>
+                    <span>PawAlert</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="quiz.html">Quiz</a></li>
+                    <li><a href="shop.html" class="active">Shop</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="#" class="btn-app">Get App</a>
+                    <button class="hamburger" aria-label="Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
 
-<header class="shop-hero">
-  <span class="eyebrow">100% goes toward keeping Paw Alert free</span>
-  <h1>Wear the paw. Help pets find home.</h1>
-  <p>Paw Alert has no ads and never will. Merch sales help cover the real costs of running it — servers, maps, notifications, all of it.</p>
-</header>
+    <!-- ========== SHOP HERO ========== -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content shop-hero-inner">
+                <span class="hero-badge">🐾 100% goes toward keeping PawAlert free</span>
+                <h1>Wear the <span>paw</span>. Help pets find home.</h1>
+                <p>PawAlert has no ads and never will. Merch sales help cover the real costs of running it — servers, maps, notifications, all of it.</p>
+            </div>
+        </div>
+    </section>
 
-<section class="products">
-  <div class="product-grid">
+    <!-- ========== PRODUCTS ========== -->
+    <section class="blog-preview">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <span class="section-tag">🛍️ Shop</span>
+                    <h2>PawAlert Merch</h2>
+                </div>
+            </div>
 
-    <div class="product-card" onclick="openModal('sweatshirt')">
-      <div class="img">
-        <img src="https://files.cdn.printful.com/files/a2b/a2b22633f200d0247915d51ef3931ac0_preview.png" alt="Paw Alert Sweatshirt">
-      </div>
-      <div class="body">
-        <h3>Paw Alert Sweatshirt</h3>
-        <div class="price">From €40</div>
-      </div>
+            <div class="product-grid">
+                <div class="product-card" onclick="openModal()">
+                    <div class="img">
+                        <img src="https://files.cdn.printful.com/files/a2b/a2b22633f200d0247915d51ef3931ac0_preview.png" alt="PawAlert Sweatshirt">
+                    </div>
+                    <div class="body">
+                        <h3>PawAlert Sweatshirt</h3>
+                        <div class="price">From €40</div>
+                    </div>
+                </div>
+
+                <div class="product-card disabled">
+                    <div class="img"><span class="soon-tag">Coming soon</span></div>
+                    <div class="body">
+                        <h3>PawAlert Tote Bag</h3>
+                        <div class="price">—</div>
+                    </div>
+                </div>
+
+                <div class="product-card disabled">
+                    <div class="img"><span class="soon-tag">Coming soon</span></div>
+                    <div class="body">
+                        <h3>Sticker Pack</h3>
+                        <div class="price">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== WHY MERCH ========== -->
+    <section class="app-cta">
+        <div class="container">
+            <div class="app-cta-box">
+                <div class="app-cta-content">
+                    <i class="fas fa-heart" style="font-size: 2.5rem; color: var(--primary-orange);"></i>
+                    <h2>Why merch, not ads</h2>
+                    <p>We'd rather ask the people who love PawAlert to support it directly than sell your attention to advertisers. Every order helps keep it that way.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER (matches site) ========== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <i class="fas fa-paw"></i>
+                        <span>PawAlert</span>
+                    </a>
+                    <p>Where every pet lover belongs.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <a href="#">About</a>
+                    <a href="#">Contact</a>
+                    <a href="#">Privacy</a>
+                    <a href="blog.html">Blog</a>
+                    <a href="quiz.html">Quiz</a>
+                    <a href="shop.html">Shop</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 PawAlert. Built with ❤️ for pet lovers.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== BUY MODAL ========== -->
+    <div class="overlay" id="overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div class="img">
+                <img src="https://files.cdn.printful.com/files/a2b/a2b22633f200d0247915d51ef3931ac0_preview.png" alt="PawAlert Sweatshirt">
+            </div>
+            <div class="body">
+                <h3>PawAlert Sweatshirt</h3>
+                <div class="price" id="modal-price">€40</div>
+                <p class="desc">Soft, eco-friendly unisex sweatshirt with the PawAlert bunny on the front.</p>
+
+                <select class="size-select" id="size-select" onchange="updatePrice()">
+                    <option value="paw-alert-sweatshirt-s">Size S — €40</option>
+                    <option value="paw-alert-sweatshirt-m" selected>Size M — €40</option>
+                    <option value="paw-alert-sweatshirt-l">Size L — €40</option>
+                    <option value="paw-alert-sweatshirt-xl">Size XL — €40</option>
+                    <option value="paw-alert-sweatshirt-2xl">Size 2XL — €42</option>
+                </select>
+
+                <button class="btn btn-primary buy-btn-full" id="buy-button" onclick="buyProduct()">Buy now</button>
+            </div>
+        </div>
     </div>
 
-    <div class="product-card disabled">
-      <div class="img">
-        <span class="soon-tag">Coming soon</span>
-      </div>
-      <div class="body">
-        <h3>Paw Alert Tote Bag</h3>
-        <div class="price">—</div>
-      </div>
-    </div>
+    <script src="js/main.js"></script>
+    <script>
+        const CHECKOUT_FUNCTION_URL = "https://checkout-292939544438.europe-west1.run.app";
 
-    <div class="product-card disabled">
-      <div class="img">
-        <span class="soon-tag">Coming soon</span>
-      </div>
-      <div class="body">
-        <h3>Sticker Pack</h3>
-        <div class="price">—</div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<section class="why">
-  <h2>Why merch, not ads</h2>
-  <p>We'd rather ask the people who love Paw Alert to support it directly than sell your attention to advertisers. Every order helps keep it that way.</p>
-</section>
-
-<footer>© 2026 Paw Alert. All rights reserved.</footer>
-
-<!-- Buy modal -->
-<div class="overlay" id="overlay" onclick="closeModalOnOverlay(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="img">
-      <img src="https://files.cdn.printful.com/files/a2b/a2b22633f200d0247915d51ef3931ac0_preview.png" alt="Paw Alert Sweatshirt">
-    </div>
-    <div class="body">
-      <h3>Paw Alert Sweatshirt</h3>
-      <div class="price" id="modal-price">€40</div>
-      <p class="desc">Soft, eco-friendly unisex sweatshirt with the Paw Alert bunny on the front.</p>
-
-      <select class="size-select" id="size-select" onchange="updatePrice()">
-        <option value="paw-alert-sweatshirt-s">Size S — €40</option>
-        <option value="paw-alert-sweatshirt-m" selected>Size M — €40</option>
-        <option value="paw-alert-sweatshirt-l">Size L — €40</option>
-        <option value="paw-alert-sweatshirt-xl">Size XL — €40</option>
-        <option value="paw-alert-sweatshirt-2xl">Size 2XL — €42</option>
-      </select>
-
-      <button class="buy-btn" id="buy-button" onclick="buyProduct()">Buy now</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  const CHECKOUT_FUNCTION_URL = "https://checkout-292939544438.europe-west1.run.app";
-
-  function openModal(product) {
-    document.getElementById('overlay').classList.add('open');
-  }
-  function closeModal() {
-    document.getElementById('overlay').classList.remove('open');
-  }
-  function closeModalOnOverlay(e) {
-    if (e.target.id === 'overlay') closeModal();
-  }
-
-  function updatePrice() {
-    const select = document.getElementById('size-select');
-    const priceText = select.options[select.selectedIndex].text.split('—')[1].trim();
-    document.getElementById('modal-price').textContent = priceText;
-  }
-
-  async function buyProduct() {
-    const button = document.getElementById('buy-button');
-    const productId = document.getElementById('size-select').value;
-    const originalText = button.textContent;
-
-    button.textContent = "Loading...";
-    button.disabled = true;
-
-    try {
-      const res = await fetch(CHECKOUT_FUNCTION_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
-      });
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Sorry, something went wrong. Please try again.");
-        button.textContent = originalText;
-        button.disabled = false;
-      }
-    } catch (err) {
-      alert("Sorry, something went wrong. Please try again.");
-      button.textContent = originalText;
-      button.disabled = false;
-    }
-  }
-</script>
-
+        function openModal() {
+            document.getElementById('overlay').classList.add('open');
+        }
+        function closeModal() {
+            document.getElementById('overlay').classList.remove('open');
+        }
+        function closeModalOnOverlay(e) {
+            if (e.target.id === 'overlay') closeModal();
+        }
+        function updatePrice() {
+            const select = document.getElementById('size-select');
+            const priceText = select.options[select.selectedIndex].text.split('—')[1].trim();
+            document.getElementById('modal-price').textContent = priceText;
+        }
+        async function buyProduct() {
+            const button = document.getElementById('buy-button');
+            const productId = document.getElementById('size-select').value;
+            const originalText = button.textContent;
+            button.textContent = "Loading...";
+            button.disabled = true;
+            try {
+                const res = await fetch(CHECKOUT_FUNCTION_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ productId }),
+                });
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert("Sorry, something went wrong. Please try again.");
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            } catch (err) {
+                alert("Sorry, something went wrong. Please try again.");
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
